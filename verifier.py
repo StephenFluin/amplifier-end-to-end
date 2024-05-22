@@ -16,9 +16,14 @@ ampd_paths = {
     "darwin-i386": "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-amd64-v0.1.0",
     "darwin-arm64": "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-arm64-v0.1.0",
 }
+axelard_paths = {
+    "linux": "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-linux-amd64-v0.35.6",
+    "darwin-i386": "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-amd64-v0.35.6",
+    "darwin-arm64": "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-arm64-v0.35.6",
+}
 
 
-verbose = True
+verbose = False
 
 if verbose:
     print("Using verbose mode")
@@ -79,6 +84,8 @@ def run_tofnd():
     except subprocess.CalledProcessError:
         print("Error executing Docker commands.")
         sys.exit(1)
+    # @TODO: Handle "Cannot connect to the Docker daemon"
+    # @TODO: Handle "Error: Kv initialization Error: Wrong password"
 
 
 # @TODO: Maybe re-use the existing docker instance instead of creating a new one
@@ -105,35 +112,12 @@ def stop_all_dockers():
         print("process err is ", err)
 
 
-# Based on the current system platform, download the right file from `ampd_paths`
 def download_ampd():
-    system = platform.system().lower()
-    if system == "darwin":
-        system += "-" + platform.machine().lower()
-    if system not in ampd_paths:
-        print(f"Unsupported system: {system}")
-        sys.exit(1)
+    download_binary(ampd_paths, "ampd")
 
-    url = ampd_paths[system]
-    filename = url.split("/")[-1]
-    if os.path.exists(filename):
-        # Already exists, all done
-        print("ampd already exists, not downloading")
-        pass
-    else:
-        print(f"Downloading {filename} from {url}")
-        response = requests.get(url)
-        with open(filename, "wb") as f:
-            f.write(response.content)
-        if verbose:
-            print(f"Downloaded {filename}")
 
-    os.chmod(filename, 0o755)
-    symlink_name = "ampd"
-    if not os.path.exists(symlink_name):
-        os.symlink(filename, symlink_name)
-        if verbose:
-            print("'ampd' symlink created")
+def download_axelard():
+    download_binary(axelard_paths, "axelard")
 
 
 # Copy `devnet-verifiers-config.toml` to `~/.ampd/config.toml`
@@ -146,8 +130,7 @@ def configure_ampd():
         os.makedirs(os.path.expanduser("~/.ampd"))
 
     if os.path.exists(os.path.expanduser("~/.ampd/config.toml")):
-        if verbose:
-            print("Not rewriting config.toml: ~/.ampd/config.toml already exists.")
+        print("Not rewriting config.toml: ~/.ampd/config.toml already exists.")
     else:
         shutil.copyfile(
             "devnet-verifiers-config.toml", os.path.expanduser("~/.ampd/config.toml")
@@ -191,6 +174,10 @@ def print_worker_address():
         "Visit https://discord.com/channels/770814806105128977/1002423218772136056/1217885883152334918 and fund this wallet with:"
     )
     print(f"!faucet devnet-verifiers {worker_address}")
+    print(
+        "You will need this to continue, so please fund your wallet before proceeding."
+    )
+    sys.exit(1)
 
 
 def check_wallet_balance(address):
@@ -209,6 +196,7 @@ def check_wallet_balance(address):
             text=True,
         )
         balance = re.findall(r'amount: "(\d+)"', process.stdout)[0]
+
         if process.returncode != 0:
             print("Error checking wallet balance")
             sys.exit(1)
@@ -282,3 +270,35 @@ def run(command, find=None, check=False):
     except subprocess.CalledProcessError:
         print("Error executing command", command)
         sys.exit(1)
+
+
+def download_binary(paths, desired_name):
+    system = platform.system().lower()
+    if system == "darwin":
+        system += "-" + platform.machine().lower()
+    if system not in paths:
+        print(f"Unsupported system: {system}")
+        sys.exit(1)
+
+    url = paths[system]
+    filename = url.split("/")[-1]
+    if os.path.exists(filename):
+        # Already exists, all done
+        print(f"{desired_name} already exists, not downloading")
+        pass
+    else:
+        print(f"Downloading {filename} from {url}")
+        response = requests.get(url)
+        with open(filename, "wb") as f:
+            f.write(response.content)
+        if verbose:
+            print(f"Downloaded {filename}")
+
+    os.chmod(filename, 0o755)
+    if not os.path.exists(desired_name):
+        os.symlink(filename, desired_name)
+        if verbose:
+            print(f"'{desired_name}' symlink created")
+    # @TODO can or should we handle "because the developer cannot be verified" here?
+    # print(f"Run to fix: xattr -d com.apple.quarantine {filename}")"
+    # run xattr {filename} and check for com.apple.quarantine
