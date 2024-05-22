@@ -4,15 +4,24 @@ import relayer_sourcechain as source
 import relayer_axelar as axelar
 
 
-# Integrator Process
+# Integrator setup
 def setup_integration():
     source.deploy_source_gateway()  # Ben
     axelar.instantiate_contracts()
 
-    print("Please fill out form")
+    print(
+        "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
+    )
+    setup_verifier()
+    print(
+        "Once you've been approved for both of these allow-lists, run the following command:"
+    )
+    print("python3 main.py test-integration")
     # wait for finish
 
-    setup_verifier()
+
+# Integrator Test
+def test_integration():
     axelar.update_worker_set()
     source.rotate_signers(axelar.get_worker_set_proof())
     axelar.supply_rewards()
@@ -24,8 +33,6 @@ def setup_integration():
     source.approve_messages(axelar.get_message_proof())
     source.execute()
     axelar.distribute_rewards()
-
-    pass
 
 
 # Verifier Process
