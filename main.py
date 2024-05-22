@@ -14,7 +14,7 @@ def setup_integration():
 
     setup_verifier()
     axelar.update_worker_set()
-    source.rotate_signers(axelar.get_worker_set_proof)
+    source.rotate_signers(axelar.get_worker_set_proof())
     axelar.supply_rewards()
     # verifier.run_ampd()
     source.create_tx()  # Ben

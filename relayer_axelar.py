@@ -110,3 +110,11 @@ def construct_proof():
 
 def distribute_rewards():
     pass
+
+
+def get_worker_set_proof():
+    pass
+
+
+def get_message_proof():
+    pass
