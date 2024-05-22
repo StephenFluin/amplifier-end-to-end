@@ -2,11 +2,15 @@
 import methods
 
 
+
 methods.check_docker_installed()
-methods.stop_all_dockers()
 methods.run_tofnd()
-print ("Ready for next step!")
 methods.download_ampd()
+methods.configure_ampd()
+methods.print_worker_address()
+methods.bond_and_register()
+
+
 
 
 
