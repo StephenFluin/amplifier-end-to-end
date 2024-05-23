@@ -1,7 +1,5 @@
 import subprocess
 import sys
-import subprocess
-import sys
 
 import platform
 import os
