@@ -1,0 +1,24 @@
+{
+  "name": "amplifier-end-to-end",
+  "version": "1.0.0",
+  "description": "- Python 3 - Docker (running) - `requests` python library - `axelard` in your path",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/stephenfluin/amplifier-end-to-end.git"
+  },
+  "author": "Stephen Fluin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/stephenfluin/amplifier-end-to-end/issues"
+  },
+  "homepage": "https://github.com/stephenfluin/amplifier-end-to-end#readme",
+  "dependencies": {
+    "@types/node": "^20.12.12",
+    "axios": "^1.7.2",
+    "ts-node": "^10.9.2"
+  }
+}

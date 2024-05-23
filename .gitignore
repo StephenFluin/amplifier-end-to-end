@@ -1,3 +1,6 @@
+node_modules/
 __pycache__/
 ampd
 ampd*
+axelard
+axeladr*
