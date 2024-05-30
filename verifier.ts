@@ -1,17 +1,22 @@
-import { spawn, execSync, spawnSync } from "child_process";
+import {
+  spawn,
+  execSync,
+  spawnSync,
+  ChildProcessWithoutNullStreams,
+} from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import * as os from "os";
-import axios from "axios"; // Use axios for HTTP requests in TypeScript
+import { downloadFile } from "./helpers";
 
 const tofnd = "haiyizxx/tofnd:latest";
 const ampd_paths = {
   linux:
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-linux-amd64-v0.1.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-linux-amd64-v0.4.0",
   "darwin-i386":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-amd64-v0.1.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-amd64-v0.4.0",
   "darwin-arm64":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-arm64-v0.1.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-darwin-arm64-v0.4.0",
 };
 const axelard_paths = {
   linux:
@@ -22,13 +27,13 @@ const axelard_paths = {
     "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-arm64-v0.35.6",
 };
 
-let verbose = false;
+let verbose = true;
 
 if (verbose) {
   console.log("Using verbose mode");
 }
 
-function checkDockerInstalled(): void {
+export function checkDockerInstalled(): void {
   try {
     execSync("docker --version"); // Use execSync for synchronous execution
     console.log("Docker is installed.");
@@ -41,15 +46,29 @@ function checkDockerInstalled(): void {
   }
 }
 
-async function runTofnd(): Promise<void> {
-  stopAllDockers();
+export async function runTofnd() {
+  const instance = run(
+    `docker ps -q --filter ancestor=${tofnd}`,
+    "docker process query"
+  );
 
+  // If tofnd is already running, don't start another instance unless the user asks for it
+  const clearFlag = process.argv.indexOf("--clear") === -1 ? false : true;
+  if (instance && !clearFlag) {
+    console.log("tofnd is already running");
+    return;
+  }
+  if (clearFlag) {
+    stopAllDockers(instance);
+  }
+
+  let tofndProcess: ChildProcessWithoutNullStreams;
   try {
     execSync("docker pull " + tofnd); // Pull the docker image
 
     console.log("Pulled docker image:", tofnd);
 
-    const tofndProcess = spawn(
+    tofndProcess = spawn(
       "docker",
       [
         "run",
@@ -65,51 +84,53 @@ async function runTofnd(): Promise<void> {
       ],
       { detached: true }
     );
-
-    let output = ""; // Store the accumulated output
-
-    return new Promise((resolve, reject) => {
-      // Event listeners for output from the child process
-      tofndProcess.stdout.on("data", (data) => {
-        output += data.toString();
-        if (verbose) {
-          console.log(data.toString().trim());
-        }
-        if (output.includes("tofnd listen addr 0.0.0.0:50051")) {
-          console.log("tofnd is ready");
-          resolve();
-        }
-      });
-
-      tofndProcess.stderr.on("data", (data) => {
-        console.error(`Error: ${data}`);
-        reject();
-      });
-
-      // Error handling for the child process
-      tofndProcess.on("close", (code) => {
-        if (code !== 0 || !output.includes("tofnd listen addr 0.0.0.0:50051")) {
-          console.error("Error executing Docker commands. Exit code:", code);
-          reject();
-          process.exit(1);
-        }
-      });
-    });
   } catch (error) {
     console.error("Error executing Docker commands:", error);
-    process.exit(1);
+    // process.exit(1);
   }
+  console.log("tofnd started");
+
+  let output = ""; // Store the accumulated output
+
+  return new Promise<void>((resolve, reject) => {
+    // Event listeners for output from the child process
+    tofndProcess.stdout.on("data", (data: any) => {
+      output += data.toString();
+
+      if (output.includes("tofnd listen addr 0.0.0.0:50051")) {
+        console.log("tofnd is ready");
+        resolve();
+      }
+    });
+
+    tofndProcess.stderr.on("data", (data: any) => {
+      console.error("Error from tofnd:", data.toString().trim());
+    });
+
+    tofndProcess.on("error", (error: any) => {
+      console.log("unknown error in tofnd", error);
+    });
+
+    // Error handling for the child process
+    tofndProcess.on("close", (code: number) => {
+      console.log("tofnd exited with code", code);
+      if (code !== 0 || !output.includes("tofnd listen addr 0.0.0.0:50051")) {
+        console.error("Error executing Docker commands. Exit code:", code);
+        reject();
+        process.exit(1);
+      } else {
+        console.error("tofnd exited with code 0 for some reason?!");
+      }
+    });
+    console.debug("done defining promise");
+  });
 }
 
-function stopAllDockers(): void {
+function stopAllDockers(instance: string): void {
   try {
-    const instance = execSync(
-      `docker ps -q --filter ancestor=${tofnd}`,
-      { encoding: "utf-8" } // Ensure output is a string
-    ).trim(); // Remove any extra whitespace
-
     if (instance.length === 0) {
       // No running docker instances found
+      console.log("No running docker instances found.");
       return;
     }
 
@@ -124,11 +145,15 @@ function stopAllDockers(): void {
   }
 }
 
-function downloadAmpd(): Promise<void> {
+export function downloadAmpd(): Promise<void> {
   return downloadBinary(ampd_paths, "ampd");
 }
 
-function downloadAxelard(): Promise<void> {
+/**
+ * Download a binary from a given URL and symlink it to a desired name
+ * Keeping both files. Download / sym link only as needed
+ */
+export function downloadAxelard(): Promise<void> {
   return downloadBinary(axelard_paths, "axelard");
 }
 
@@ -154,38 +179,41 @@ async function downloadBinary(
     process.exit(1);
   }
 
-  if (fs.existsSync(filename)) {
-    console.log(`${desiredName} already exists, not downloading`);
-    return;
+  if (fs.existsSync(filename) && fs.readlinkSync(desiredName) == filename) {
+    console.log(`${filename} already exists, not downloading`);
+  } else {
+    console.log(`Downloading ${filename} from ${url}`);
+    try {
+      await downloadFile(url, filename);
+      console.log("file written to filesystem");
+      fs.chmodSync(filename, 0o755); // Make it executable
+    } catch (error) {
+      console.error(`Error downloading ${filename}:`, error);
+      process.exit(1);
+    }
   }
-
-  console.log(`Downloading ${filename} from ${url}`);
-
   try {
-    const response = await axios.get(url, { responseType: "arraybuffer" }); // Get binary data
-    fs.writeFileSync(filename, response.data);
-
-    console.log(`Downloaded ${filename}`);
-
-    fs.chmodSync(filename, 0o755); // Set file permissions
-
     if (!fs.existsSync(desiredName)) {
-      fs.symlinkSync(filename, desiredName); // Create symlink
+      fs.symlinkSync(filename, desiredName);
       console.log(`'${desiredName}' symlink created`);
+    } else if (fs.readlinkSync(desiredName) != filename) {
+      console.log("Updating symlink to point to", filename);
+      fs.unlinkSync(desiredName);
+      fs.symlinkSync(filename, desiredName);
     }
   } catch (error) {
-    console.error(`Error downloading ${filename}:`, error);
+    console.error(`Error sym linking ${filename} to ${desiredName}:`, error);
     process.exit(1);
   }
 }
 
-function configureAmpd(): void {
-  const configFilePath = "devnet-verifiers-config.toml";
+export function configureAmpd(network: string): void {
+  const configFilePath = `devnet-${network}-config.toml`;
   const destinationDir = path.join(os.homedir(), ".ampd");
   const destinationPath = path.join(destinationDir, "config.toml");
 
   if (!fs.existsSync(configFilePath)) {
-    console.error("Error: devnet-verifiers-config.toml not found.");
+    console.error(`Error: ${configFilePath} not found.`);
     process.exit(1);
   }
 
@@ -193,31 +221,26 @@ function configureAmpd(): void {
     fs.mkdirSync(destinationDir);
   }
 
-  if (fs.existsSync(destinationPath)) {
-    console.log(
-      "Not rewriting config.toml: ~/.ampd/config.toml already exists."
-    );
-  } else {
-    fs.copyFileSync(configFilePath, destinationPath);
-    console.log("Copied devnet-verifiers-config.toml to ~/.ampd/config.toml");
-  }
+  // Always copy as there might be updates
+  fs.copyFileSync(configFilePath, destinationPath);
+  console.log("Copied devnet-verifiers-config.toml to ~/.ampd/config.toml");
 }
 
-function printWorkerAddress(): void {
-  const output = run("./ampd worker-address", "get worker address"); // Assuming ampd is in the current directory
-  const workerAddress = /worker address: (.*)/.exec(output)?.[1];
-  if (!workerAddress) {
-    console.log("Error getting worker address");
+export function printVerifierAddress(network: string): void {
+  const output = run("./ampd verifier-address", "get verifier address"); // Assuming ampd is in the current directory
+  const verifierAddress = /verifier address: (.*)/.exec(output)?.[1];
+  if (!verifierAddress) {
+    console.log("Error getting verifier address");
     process.exit(1);
   }
 
-  console.log(`Your worker address is ${workerAddress}.`);
+  console.log(`Your verifier address is ${verifierAddress}.`);
 
-  const balance = checkWalletBalance(workerAddress);
+  const balance = checkWalletBalance(verifierAddress, network);
 
-  if (balance != "0") {
+  if (balance != "0" && balance != "unknown") {
     console.log(
-      `You already have ${balance} tokens in your wallet, no need to fund it.`
+      `You already have ${balance} tokens in your wallet on devnet-${network}, no need to fund it.`
     );
     return;
   }
@@ -225,15 +248,16 @@ function printWorkerAddress(): void {
   console.log(
     "Visit https://discord.com/channels/770814806105128977/1002423218772136056/1217885883152334918 and fund this wallet with:"
   );
-  console.log(`!faucet devnet-verifiers ${workerAddress}`);
+  console.log(`!faucet devnet-${network} ${verifierAddress}`);
   console.log(
     "You will need this to continue, so please fund your wallet before proceeding."
   );
+  process.exit(1);
 }
 
-function checkWalletBalance(address: string): string {
+function checkWalletBalance(address: string, network: string): string {
   const output = run(
-    `axelard q bank balances ${address} --node http://devnet-verifiers.axelar.dev:26657`,
+    `axelard q bank balances ${address} --node http://devnet-${network}.axelar.dev:26657`,
     "fetching balance"
   );
 
@@ -245,10 +269,10 @@ function checkWalletBalance(address: string): string {
   }
 }
 
-function bondAndRegister(): void {
+export function bondAndRegister(network: string): void {
   run(
-    "./ampd --config devnet-verifiers-config.toml bond-worker validators 100 uverifiers",
-    "bonding worker"
+    `./ampd --config devnet-${network}-config.toml bond-verifier verifiers 100 u${network}`,
+    "bonding verifier"
   );
 
   /**
@@ -298,22 +322,3 @@ function run(command: string, processName: string): string {
     process.exit(1);
   }
 }
-
-async function verifier() {
-  checkDockerInstalled();
-  await runTofnd();
-  downloadAmpd();
-  configureAmpd();
-  downloadAxelard();
-  printWorkerAddress();
-  bondAndRegister();
-  console.log("Finished setting up verifier");
-  console.log("Now fill out the form here:");
-  console.log(
-    "https://docs.google.com/forms/d/e/1FAIpQLSfQQhk292yT9j8sJF5ARRIE8PpI3LjuFc8rr7xZW7posSLtJA/viewform"
-  );
-}
-
-verifier()
-  .then(() => process.exit(0))
-  .catch(() => process.exit(1));
