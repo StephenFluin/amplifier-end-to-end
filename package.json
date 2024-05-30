@@ -4,7 +4,8 @@
   "description": "- Python 3 - Docker (running) - `requests` python library - `axelard` in your path",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "verifier": "ts-node index.ts"
   },
   "repository": {
     "type": "git",
