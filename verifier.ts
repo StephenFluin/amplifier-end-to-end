@@ -257,7 +257,7 @@ export function printVerifierAddress(network: string): void {
 
 function checkWalletBalance(address: string, network: string): string {
   const output = run(
-    `axelard q bank balances ${address} --node http://devnet-${network}.axelar.dev:26657`,
+    `./axelard q bank balances ${address} --node http://devnet-${network}.axelar.dev:26657`,
     "fetching balance"
   );
 
@@ -271,7 +271,7 @@ function checkWalletBalance(address: string, network: string): string {
 
 export function bondAndRegister(network: string): void {
   run(
-    `./ampd --config devnet-${network}-config.toml bond-verifier verifiers 100 u${network}`,
+    `./ampd --config devnet-${network}-config.toml bond-verifier validators 100 u${network}`,
     "bonding verifier"
   );
 
