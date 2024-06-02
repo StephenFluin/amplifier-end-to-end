@@ -1,46 +1,53 @@
 import * as verifier from "./verifier";
 import * as source from "./source";
 import * as axelar from "./axelar";
+import { downloadAmpd, downloadAxelard } from "./helpers";
 
-const network =
-  process.argv.indexOf("--amplifier") === -1 ? "verifiers" : "amplifier";
+const action =
+  process.argv.indexOf("integrator") === -1 ? "verifier" : "integrator";
+console.log("Running", action, "workflow");
+if (action === "integrator") {
+  setupIntegration();
+} else {
+  const network =
+    process.argv.indexOf("--amplifier") === -1 ? "verifiers" : "amplifier";
+  setupVerifier(network);
+}
+export async function setupIntegration() {
+  await downloadAxelard();
+  source.deploy_source_gateway(); // Ben
+  axelar.instantiateContracts();
 
-setupVerifier(network);
-
-export async function setupIntegration() {}
-//   source.deploy_source_gateway()  # Ben
-//   axelar.instantiate_contracts()
-
-//     print(
-//         "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
-//     )
-//     setup_verifier()
-//     print(
-//         "Once you've been approved for both of these allow-lists, run the following command:"
-//     )
-//     print("python3 main.py test-integration")
-//     # wait for finish
+  console.log(
+    "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
+  );
+  // await setupVerifier("amplifier");
+  // console.log(
+  //   "Once you've been approved for both of these allow-lists, run the following command:"
+  // );
+  console.log("npm run test-integration");
+}
 export async function testIntegration() {
-  axelar.update_worker_set();
-  source.rotate_signers(axelar.get_worker_set_proof());
-  axelar.supply_rewards();
+  axelar.updateWorkerSet();
+  source.rotate_signers(axelar.getWorkerSetProof());
+  axelar.supplyRewards();
   // verifier.run_ampd()
   source.create_tx(); // Ben
-  axelar.verify_messages();
-  axelar.route_messages();
-  axelar.construct_proof();
-  source.approve_messages(axelar.get_message_proof());
+  axelar.verifyMessages();
+  axelar.routeMessages();
+  axelar.constructProof();
+  source.approve_messages(axelar.getMessageProof());
   source.execute();
-  axelar.distribute_rewards();
+  axelar.distributeRewards();
 }
 
 export async function setupVerifier(network = "verifiers") {
   verifier.checkDockerInstalled();
   let prom = await verifier.runTofnd();
   console.log("Finished setting up tofnd");
-  await verifier.downloadAmpd();
+  await downloadAmpd();
   verifier.configureAmpd(network);
-  await verifier.downloadAxelard();
+  await downloadAxelard();
   verifier.printVerifierAddress(network);
   verifier.bondAndRegister(network);
   console.log("Finished setting up verifier");
