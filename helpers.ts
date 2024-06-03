@@ -6,7 +6,7 @@ const ampd_paths = {
   linux:
     "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-linux-amd64-v0.4.0",
   "darwin-i386":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.1.0/ampd-darwin-amd64-v0.4.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-darwin-amd64-v0.4.0",
   "darwin-arm64":
     "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-darwin-arm64-v0.4.0",
 };
