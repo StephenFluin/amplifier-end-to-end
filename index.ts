@@ -21,10 +21,6 @@ export async function setupIntegration() {
   console.log(
     "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
   );
-  // await setupVerifier("amplifier");
-  // console.log(
-  //   "Once you've been approved for both of these allow-lists, run the following command:"
-  // );
   console.log("npm run test-integration");
 }
 export async function testIntegration() {
