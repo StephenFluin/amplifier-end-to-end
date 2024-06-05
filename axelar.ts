@@ -75,7 +75,7 @@ export async function instantiateContracts() {
       "verifier_set_diff_threshold": 1,
       "encoder": "abi",
       "key_type": "ecdsa",
-      "domain_separator": "${randomHash()}"
+      "domain_separator": ${randomHash()}
   }`,
     { address: address }
   );
@@ -104,21 +104,19 @@ function instantiate(
 `;
   console.log("About to run instantiate command:", cmd);
   const creation = run(cmd, `instantiating ${contract}`);
-  const contractAdress = creation.match(
+  const contractAddress = creation.match(
     /"key":"_contract_address","value":"(.*?)"/
   )?.[1];
-  return [contractAdress, creation];
+  return [contractAddress, creation];
 }
 function randomHash() {
-  const characters = "0123456789abcdef";
-  let hash = "0x";
+  let numbers: number[] = [];
 
-  for (let i = 0; i < 64; i++) {
-    const randomIndex = Math.floor(Math.random() * characters.length);
-    hash += characters[randomIndex];
+  for (let i = 0; i < 32; i++) {
+    numbers.push(Math.floor(Math.random() * 256));
   }
 
-  return hash;
+  return `[${numbers.join(",")}]`;
 }
 function compileContracts() {
   console.log("Downloading CosmWasm contracts from axelar-amplifier via git");
