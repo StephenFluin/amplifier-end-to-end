@@ -30,11 +30,11 @@ type="MultisigSigner"
 [[handlers]]
 chain_name="avalanche"
 chain_rpc_url="https://avalanche-fuji-c-chain-rpc.publicnode.com"
-cosmwasm_contract="axelar1elaymnd2epmfr498h2x9p2nezc4eklv95uv92u9csfs8wl75w7yqdc0h67"
+cosmwasm_contract="axelar1ty7mx0cllgz8xuvhn2j7e3qy8999ssgmjtktyqetl335em0g88lq6rjhl2"
 type="EvmMsgVerifier"
 
 [[handlers]]
-chain_name="fantom"
-chain_rpc_url="https://rpc.ankr.com/fantom_testnet/"
-cosmwasm_contract="axelar17fa8wruwmk2y0h32wrg5rxwespvcvz5zc2hjnczz58tnmg8enh0sunsshp"
+chain_name="ethereum-sepolia"
+chain_rpc_url="https://rpc.ankr.com/eth_sepolia"
+cosmwasm_contract="axelar1e6jnuljng6aljk0tjct6f0hl9tye6l0n9p067pwx2374h82dmr0s9qcqy9"
 type="EvmMsgVerifier"
