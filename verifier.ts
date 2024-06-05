@@ -9,6 +9,7 @@ import * as path from "path";
 import * as os from "os";
 import { run } from "./helpers";
 
+// const tofnd = "axelarnet/tofnd:v0.10.1";
 const tofnd = "haiyizxx/tofnd:latest";
 
 let verbose = true;
@@ -77,22 +78,56 @@ export async function runTofnd() {
   let output = ""; // Store the accumulated output
 
   return new Promise<void>((resolve, reject) => {
-    // Event listeners for output from the child process
-    tofndProcess.stdout.on("data", (data: any) => {
-      output += data.toString();
+    resolve();
+    const cleanup = () => {
+      console.log("stopping listening on tofnd");
+      tofndProcess.stdout.removeAllListeners("data");
+      tofndProcess.stderr.removeAllListeners("data");
+      tofndProcess.removeAllListeners("error");
+      tofndProcess.removeAllListeners("close");
+      tofndProcess.kill();
+    };
 
+    const handleStdOut = (data: any) => {
+      output += data.toString();
+      let done = false;
       if (output.includes("tofnd listen addr 0.0.0.0:50051")) {
-        console.log("tofnd is ready");
+        console.log("tofnd is ready", data, data.toString());
+        done = true;
+        cleanup();
         resolve();
+      } else {
+        if (done) {
+          console.log("Unexpected output from tofnd:", data.toString().trim());
+        } else {
+          console.log(
+            "More EXPECTED output from tofnd:",
+            data.toString().trim()
+          );
+        }
       }
-    });
+    };
+
+    // Event listeners for output from the child process
+    tofndProcess.stdout.on("data", handleStdOut);
 
     tofndProcess.stderr.on("data", (data: any) => {
+      if (data.toString().includes("Kv initialization Error: Wrong password")) {
+        console.error("tofnd version mismatch");
+        console.error("kill your docker containers and remove the old volume");
+        console.error(
+          " docker remove `docker ps -aq --filter ancestor=" + tofnd + "`"
+        );
+        console.error(" docker volume rm tofnd");
+        reject();
+        process.exit(1);
+      }
       console.error("Error from tofnd:", data.toString().trim());
     });
 
     tofndProcess.on("error", (error: any) => {
       console.log("unknown error in tofnd", error);
+      process.exit(1);
     });
 
     // Error handling for the child process
@@ -106,7 +141,6 @@ export async function runTofnd() {
         console.error("tofnd exited with code 0 for some reason?!");
       }
     });
-    console.debug("done defining promise");
   });
 }
 
