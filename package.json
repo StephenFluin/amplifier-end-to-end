@@ -8,7 +8,8 @@
     "verifier": "ts-node index.ts verifier",
     "integrator": "ts-node index.ts integrator",
     "tx": "ts-node index.ts tx",
-    "verify": "ts-node index.ts verify"
+    "verify": "ts-node index.ts verify",
+    "setup-deployment": "ts-node index.ts setupDeployment"
   },
   "repository": {
     "type": "git",
