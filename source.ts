@@ -12,25 +12,22 @@ const execAsync = promisify(exec);
 /**
  * Get the EVM gateway deployer
  */
+//setup gateway deployment
 export async function setupGatewayDeployer() {
-  if (!existsSync("axelar-contract-deployments")) {
-    run(
-      "git clone https://github.com/axelarnetwork/axelar-contract-deployments",
-      "clone repo"
-    );
-  }
-  run(
-    `cd axelar-contract-deployments;git checkout 019d41f81b506d35fa89ffd9ebb3a02719563e09;npm i`,
-    "install dependencies"
-  );
-  console.log(
-    "Deployer cloned in your ./axelar-contract-deployments directory"
-  );
-  console.log(
-    "Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments"
-  );
-}
+  const clearFlag = process.argv.indexOf('--clear') === -1 ? false : true
+  if (clearFlag)
+    run('rm -rf axelar-contract-deployments', 'remove and replace old repo')
 
+  if (!existsSync('axelar-contract-deployments')) {
+    run(
+      'git clone https://github.com/axelarnetwork/axelar-contract-deployments',
+      'clone repo'
+    )
+    run(`cd axelar-contract-deployments;npm i`, 'install dependencies')
+  }
+  console.log('Deployer cloned in your ./axelar-contract-deployments directory')
+  console.log('Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments')
+}
 /**
  * Use the EVM gateway deployer to deploy a new gateway
  */
