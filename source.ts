@@ -2,11 +2,24 @@ import * as axelar from "./axelar";
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 import { AxelarGatewayABI } from "./axelar-gateway";
+import { run } from './helpers'
+import { existsSync } from 'fs'
 
 /**
  * Functions for interacting with the chain being integrated (source/destination)
  */
-export function deploy_source_gateway() {}
+export function source_gateway_deployment() {
+    if (existsSync('axelar-contract-deployments')) {
+        console.log('deploying gateway on sepolia')
+        run(
+            `cd axelar-contract-deployments;node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`,
+            'deploy sepolia gateway'
+        )
+        console.log('source gateway deployed!')
+    } else {
+        console.log('deployer not setup please run npm run setup-deployment')
+    }
+}
 export function rotate_signers(proof: any) {}
 export function create_tx() {
   const sourceGatewayAddress = "0x2A8465a312ebBa54D774972f01D64574a5acFC63";
