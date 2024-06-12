@@ -6,7 +6,9 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "verifier": "ts-node index.ts verifier",
-    "integrator": "ts-node index.ts integrator"
+    "integrator": "ts-node index.ts integrator",
+    "tx": "ts-node index.ts tx",
+    "verify": "ts-node index.ts verify"
   },
   "repository": {
     "type": "git",
@@ -21,6 +23,8 @@
   "dependencies": {
     "@types/node": "^20.12.12",
     "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "ethers": "^6.13.0",
     "ts-node": "^10.9.2"
   }
 }

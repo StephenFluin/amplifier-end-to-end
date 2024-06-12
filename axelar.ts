@@ -198,7 +198,41 @@ function deployContract(contract: string) {
 
 export function updateWorkerSet() {}
 export function supplyRewards() {}
-export function verifyMessages() {}
+export function verifyMessages() {
+  const votingVerifier =
+    "axelar1sxujcvele5eqtx0xc4wuy6jr0m28y0yt8spn7efc3527vc2j2xrqk6wkay";
+  const chainName = "ethereum-sepolia";
+  const tx =
+    "0xc9eb0d116e1f79511f039cc58a3a531f72e704bc18a46d370de160941372bcc3";
+  const source = "0x3E77Fd1B4d4176CA9d54dB60f132FbB88BFA43CA";
+  const destination = "avalanche";
+  const destinationAddress = "0xaE706DD03e8A57214E6f1d39c6aa58C4A326bca4";
+  const payloadHash =
+    "64b8427717b2ce8573a0c37e03e30ec683c2fe57dcee4d426d22cf43c7692675";
+  const logIndex = "60";
+
+  // Example tx:
+  // 0xc9eb0d116e1f79511f039cc58a3a531f72e704bc18a46d370de160941372bcc3
+
+  run(
+    `./axelard tx wasm execute ${votingVerifier} \
+    '{"verify_messages":
+      [{"cc_id":{
+        "chain":"${chainName}",
+        "id":"${tx}-${logIndex}"},
+        "destination_chain":"${destination}",
+        "destination_address":"${destinationAddress}",
+        "source_address":"${source}",
+        "payload_hash":"${payloadHash}"}]
+    }' \
+  --keyring-backend test \
+  --from wallet \
+  --gas auto --gas-adjustment 1.5 \
+      --node http://devnet-verifiers.axelar.dev:26657
+`,
+    "Trigger message verification on the Axelar Network"
+  );
+}
 export function routeMessages() {}
 export function constructProof() {}
 export function distributeRewards() {}

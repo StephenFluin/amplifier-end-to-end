@@ -3,16 +3,31 @@ import * as source from "./source";
 import * as axelar from "./axelar";
 import { downloadAmpd, downloadAxelard } from "./helpers";
 
-const action =
-  process.argv.indexOf("integrator") === -1 ? "verifier" : "integrator";
-console.log("Running", action, "workflow");
-if (action === "integrator") {
-  setupIntegration();
-} else {
-  const network =
-    process.argv.indexOf("--amplifier") === -1 ? "verifiers" : "amplifier";
-  setupVerifier(network);
+const action = process.argv[2];
+if (!action) {
+  console.log("please specify an action, `integrator`, `verifier` or `tx`");
+  process.exit(1);
 }
+console.log("Running", action, "workflow");
+const network =
+  process.argv.indexOf("--amplifier") === -1 ? "verifiers" : "amplifier";
+switch (action) {
+  case "integrator":
+    setupIntegration();
+    break;
+  case "verifier":
+    setupVerifier(network);
+    break;
+  case "tx":
+    source.create_tx();
+    break;
+  case "verify":
+    axelar.verifyMessages();
+    break;
+  default:
+    console.error("Invalid action");
+}
+
 export async function setupIntegration() {
   await downloadAxelard();
   source.deploy_source_gateway(); // Ben
