@@ -51,6 +51,7 @@ switch (action) {
 //   setupVerifier(network);
 }
 
+//setup gateway deployment
 export async function setupDeployer() {
   console.log('Downloading gateway deployer via git...')
 
@@ -74,7 +75,7 @@ export async function setupDeployer() {
 
 export async function setupIntegration() {
   await downloadAxelard()
-  source.source_gateway_deployment() // Ben
+  // source.source_gateway_deployment() // Ben
   axelar.instantiateContracts()
 
   console.log(
@@ -82,6 +83,7 @@ export async function setupIntegration() {
   )
   console.log('npm run test-integration')
 }
+
 export async function testIntegration() {
   axelar.updateWorkerSet()
   source.rotate_signers(axelar.getWorkerSetProof())
