@@ -1,25 +1,14 @@
 # Dependencies
 
-- Python 3
 - Docker (running)
-- `requests` python library
 - `axelard` in your path
+- `npm i` to install js dependencies
 
-## Python
+## User Flow
+To setup verifier run `npm run verifier`
+To setup gateway deployment run `npm run setup deployment`
+To execute the integration run `npm run integrator`
 
-You'll need python and `requests` installed on your machine. You can download python from [here](https://www.python.org/downloads/). Once you have python installed, you can install pip by following the instructions [here](https://pip.pypa.io/en/stable/installing/).
-
-To install request on mac:
-
-```bash
-brew install python-request
-```
-
-or with `pip`
-
-```bash
-python3 -m pip install requests
-```
 
 You may need to turn on the Docker daemon (run docker desktop?)
 

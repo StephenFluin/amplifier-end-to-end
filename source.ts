@@ -4,18 +4,33 @@ import * as dotenv from "dotenv";
 import { AxelarGatewayABI } from "./axelar-gateway";
 import { run } from './helpers'
 import { existsSync } from 'fs'
+import { exec } from 'child_process';
+import { promisify } from 'util';
+
+
+const execAsync = promisify(exec);
 
 /**
  * Functions for interacting with the chain being integrated (source/destination)
  */
-export function source_gateway_deployment() {
+export async function source_gateway_deployment() {
     if (existsSync('axelar-contract-deployments')) {
-        console.log('deploying gateway on sepolia')
-        run(
-            `cd axelar-contract-deployments;node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`,
-            'deploy sepolia gateway'
-        )
-        console.log('source gateway deployed!')
+        console.log('Deploying gateway on sepolia')
+        const { stdout, stderr } = await execAsync(
+            `cd axelar-contract-deployments && node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`
+        );
+        const gatewayImplementationRegex = /Gateway Implementation:\s+(\S+)/;
+        const match = stdout.match(gatewayImplementationRegex);
+        if (match) {
+            const gatewayImplementationAddress = match[1];
+            console.log('Src gateway deployed on sepolia at address:', gatewayImplementationAddress);
+            return gatewayImplementationAddress
+        } else {
+            console.error('Gateway Implementation Address not found');
+
+        }
+        if (stderr) console.error('Deployment Errors:', stderr);
+
     } else {
         console.log('deployer not setup please run npm run setup-deployment')
     }

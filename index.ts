@@ -53,30 +53,31 @@ switch (action) {
 
 //setup gateway deployment
 export async function setupDeployer() {
-  console.log('Downloading gateway deployer via git...')
-
   const clearFlag = process.argv.indexOf('--clear') === -1 ? false : true
   if (clearFlag)
     run('rm -rf axelar-contract-deployments', 'remove and replace old repo')
 
   if (!existsSync('axelar-contract-deployments')) {
+    console.log('Downloading gateway deployer via git...')
     run(
       'git clone https://github.com/axelarnetwork/axelar-contract-deployments',
       'clone repo'
     )
-    run(
-      `cd axelar-contract-deployments;npm i`,
-      'install dependencies'
-    )
+    run(`cd axelar-contract-deployments;npm i`, 'install dependencies')
     console.log('gateway deployer downloaded')
-    console.log('please add a private key to ./axelar-contract-deployments repo in a new .env file')
+    console.log(
+      'please add a private key to ./axelar-contract-deployments repo in a new .env file'
+    )
   }
+  console.log('Deployer setup')
 }
 
 export async function setupIntegration() {
   await downloadAxelard()
-  // source.source_gateway_deployment() // Ben
-  axelar.instantiateContracts()
+  const srcGateway = await source.source_gateway_deployment()
+  srcGateway
+    ? axelar.instantiateContracts(srcGateway)
+    : console.error('src gateway undefined')
 
   console.log(
     'Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform'
