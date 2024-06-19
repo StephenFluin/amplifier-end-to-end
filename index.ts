@@ -16,6 +16,7 @@ const network =
 switch (action) {
   case 'setupDeployment':
     setupDeployer()
+    break;
   case "integrator":
     setupIntegration();
     break;
@@ -30,25 +31,6 @@ switch (action) {
     break;
   default:
     console.error("Invalid action");
-
-// // Determine the action based on command line arguments
-// let action = 'verifier'; // Default action
-// if (process.argv.indexOf('integrator') !== -1) {
-//   action = 'integrator';
-// } else if (process.argv.indexOf('setupDeployment') !== -1) {
-//   action = 'setupDeployment';
-// }
-
-// console.log('Running', action, 'workflow');
-
-// // Execute the appropriate setup function based on the action
-// if (action === 'integrator') {
-//   setupIntegration();
-// } else if (action === 'setupDeployment') {
-//   setupDeployer();
-// } else {
-//   const network = process.argv.indexOf('--amplifier') === -1 ? 'verifiers' : 'amplifier';
-//   setupVerifier(network);
 }
 
 //setup gateway deployment
@@ -58,18 +40,14 @@ export async function setupDeployer() {
     run('rm -rf axelar-contract-deployments', 'remove and replace old repo')
 
   if (!existsSync('axelar-contract-deployments')) {
-    console.log('Downloading gateway deployer via git...')
     run(
       'git clone https://github.com/axelarnetwork/axelar-contract-deployments',
       'clone repo'
     )
     run(`cd axelar-contract-deployments;npm i`, 'install dependencies')
-    console.log('gateway deployer downloaded')
-    console.log(
-      'please add a private key to ./axelar-contract-deployments repo in a new .env file'
-    )
   }
-  console.log('Deployer setup')
+  console.log('Deployer cloned in your ./axelar-contract-deployments directory')
+  console.log('Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments')
 }
 
 export async function setupIntegration() {
