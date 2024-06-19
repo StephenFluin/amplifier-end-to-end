@@ -44,7 +44,7 @@ export async function setupDeployer() {
       'git clone https://github.com/axelarnetwork/axelar-contract-deployments',
       'clone repo'
     )
-    run(`cd axelar-contract-deployments;npm i`, 'install dependencies')
+    run(`cd axelar-contract-deployments;git checkout 019d41f81b506d35fa89ffd9ebb3a02719563e09;npm i`, 'install dependencies')
   }
   console.log('Deployer cloned in your ./axelar-contract-deployments directory')
   console.log('Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments')
