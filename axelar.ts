@@ -5,7 +5,7 @@
 import { existsSync } from "fs";
 import { run } from "./helpers";
 
-export async function instantiateContracts() {
+export async function instantiateContracts(srcGateway: string) {
   compileContracts();
   const [verifierCodeId, gatewayCodeId, proverCodeId] = deployContracts();
 
@@ -21,7 +21,7 @@ export async function instantiateContracts() {
     );
     process.exit(1);
   }
-  let sourceChainGatewayAddress = "0xCa85f85C72df5f8428a440887CA7c449D94e0D0c"; // Ben to update when we do it dynamically
+  let sourceChainGatewayAddress = srcGateway; 
 
   console.log(
     "Instantiating verifier with",
