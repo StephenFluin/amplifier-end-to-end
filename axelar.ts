@@ -21,7 +21,7 @@ export async function instantiateContracts(srcGateway: string) {
     );
     process.exit(1);
   }
-  let sourceChainGatewayAddress = srcGateway; 
+  let sourceChainGatewayAddress = srcGateway;
 
   console.log(
     "Instantiating verifier with",
@@ -196,7 +196,7 @@ function deployContract(contract: string) {
   return codeId;
 }
 
-export function updateWorkerSet() {}
+export function updateVerifierSet() {}
 export function supplyRewards() {}
 export function verifyMessages() {
   const gateway =

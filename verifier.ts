@@ -9,8 +9,8 @@ import * as path from "path";
 import * as os from "os";
 import { run } from "./helpers";
 
-// const tofnd = "axelarnet/tofnd:v0.10.1";
-const tofnd = "haiyizxx/tofnd:latest";
+const tofnd = "axelarnet/tofnd:v0.10.5";
+// const tofnd = "haiyizxx/tofnd:latest";
 
 let verbose = true;
 
@@ -63,6 +63,8 @@ export async function runTofnd() {
         "MNEMONIC_CMD=auto",
         "--env",
         "NOPASSWORD=true",
+        "--env",
+        "ADDRESS=0.0.0.0",
         "-v",
         "tofnd:/.tofnd",
         tofnd,
