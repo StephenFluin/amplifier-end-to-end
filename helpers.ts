@@ -4,19 +4,15 @@ import { execSync } from "child_process";
 
 const ampd_paths = {
   linux:
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-linux-amd64-v0.4.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-linux-amd64-v0.6.0",
   "darwin-i386":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-darwin-amd64-v0.4.0",
-  "darwin-arm64":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.4.0/ampd-darwin-arm64-v0.4.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-darwin-amd64-v0.6.0",
 };
 const axelard_paths = {
   linux:
     "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-linux-amd64-v0.35.6",
   "darwin-i386":
     "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-amd64-v0.35.6",
-  "darwin-arm64":
-    "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-arm64-v0.35.6",
 };
 
 /**
@@ -60,7 +56,8 @@ async function downloadBinary(
 ): Promise<void> {
   let system = os.platform().toLowerCase();
   if (system === "darwin") {
-    system += "-" + os.arch().toLowerCase();
+    // amd64 for all macs intentionally
+    system += "-" + "amd64";
   }
   console.log("system detected as", system);
 

@@ -9,8 +9,7 @@ import * as path from "path";
 import * as os from "os";
 import { run } from "./helpers";
 
-const tofnd = "axelarnet/tofnd:v0.10.5";
-// const tofnd = "haiyizxx/tofnd:latest";
+const tofnd = "axelarnet/tofnd:v1.0.1";
 
 let verbose = true;
 
@@ -239,7 +238,7 @@ export function bondAndRegister(network: string): void {
    */
   let registerResult;
   try {
-    registerResult = execSync("./ampd register-public-key", {
+    registerResult = execSync("./ampd register-public-key ecdsa", {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
     });

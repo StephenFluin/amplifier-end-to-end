@@ -85,7 +85,7 @@ export async function testIntegration() {
 }
 
 export async function setupVerifier(network = "verifiers") {
-  console.log("This script is for amplifier prerelease-5 (ampd 0.5.0)");
+  console.log("This script is for amplifier prerelease-6 (ampd 0.6.0)");
   verifier.checkDockerInstalled();
   await verifier.runTofnd();
   console.log("Finished setting up tofnd");

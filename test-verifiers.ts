@@ -1,45 +1,8 @@
 import { run } from "./helpers";
+import { KNOWN_VERIFIERS } from "./known-verifiers";
 const limit = 30;
 // Wait in seconds
 const wait = 120;
-
-const verifiers: { [key: string]: string } = {
-  axelar1ks5em0gmml0qjfek0msqm9pxcmawj54as65j5v: "MultiversX Verifier #1 - #3",
-  axelar1v2qnjptahr9syeekakkc7p8md2n2l7zmdu7xwx: "MultiversX Verifier #1 - #3",
-  axelar1c29hzkdly6n26dv504qxncwt7eecqpau29kkg2: "MultiversX Verifier #1 - #3",
-  axelar1d73v2p9gdk2usxhh5k9kham2s42ccrydrd67hg: "KingSuper",
-  axelar1rnyqx3fjw2m4a527rsdc587cd8mehy5d78fgk0: "Node.Monster",
-  axelar1n7sups27f26x6qr0tkmpnavklg5d5ue69l32tj: "ContributionDAO",
-  axelar14dcl3nyfu47dmkjaqwxt08577m3m3cy7332xe5: "uverifiers",
-  axelar1dfw0etmwwka0c02am0l8vc7l3dqk4xe06vr4zx: "Stakin",
-  axelar139lxtg3qunfa285hfr4d0qlyw4hh07e9n0mud7: "uverifiers",
-  axelar1ul4qrc3w52ejtgsth4sqjmrtxs78n5y84fecrl: "Validatrium",
-  axelar1rlv40z8cgrcfwykac73q6vy5z5n2cfknwv2ylq: "Polkachu",
-  axelar1rnxdcj4l5zpcr4kfp4x33j94u4khytxsevdhu3: "ChainodeTech",
-  axelar14xlsptge83gdsrquhkcekj2xn6a7cvwhrjzjf8: "LunaNova",
-  axelar1qjya6uqya82ny0ensz5p7nysqjyncjsslrhld6: "commonprefix",
-  axelar1j9ze6ym0q06ppfx94pz04l72vye0patgc57gyz: "P2P.ORG",
-  axelar14r7fxm92hfkar3akpwfxwdjeueegnd2e5evwav: "Brightlystake",
-  axelar1sa9ac5edsetfx295wlfu9dxu3fwkdvu6q0h44e: "pegasus",
-  axelar156hdwk32aypw9xcqzcrjhaxag3r5ugakg25lx7: "P-OPS Team",
-  axelar1jva4lh60vj7cqz7pvjj7zceucyw6a6utp29c8x: "Common Prefix Hedera",
-  axelar1kkru07tvp3nmsqvprep8ju0jrg5pprukah0p0e: "Eiger",
-  axelar1zduz4ts027zq82ffh447xkg90cwxskyzlpu5w5: "Chainlayer",
-  axelar16up4l9knk42kkj3e4vn4w453470vrayddg0y7f: "Stakin",
-  axelar1s6hnecepvzpqu5d6du8u2pwd23003l0fd35gd5: "StephenTheVerifier",
-  axelar1zn5z4a0vl4vhpjxyjft2tmn09h6wy0zfgwgqug: "IdrisTheVerifier",
-  axelar1yx4ufkdde7f5c69netj7gc98w7u0c480l83rhd: "LunaNova",
-  axelar1f0ys8e82l7ht397xuut0r2kx55qp7vkslhyljf: "Chainlayer",
-  axelar1tyl4zumcecs7lh8q30z45n0pclqs9xwll2z0y2: "Polkachu",
-  axelar1ms24zzalgfukc2ca3wy045l9vyx6x7an4ch9un: "ChainodeTech",
-  axelar1y7vc0r8vt4rhyp2snvtdh0d9se04xlcfuffu8g:
-    "XRPL EVM Sidechain - Peersyst",
-  axelar1ure22quyrl8wdyxz4jdx285hp4dwufwt0g0akl: "validators",
-  axelar15xphll3h5vcs2n8ckcpf4mu5znzspwu66ge9py: "Enigma",
-  axelar17xlmznfxda8vd7sryg7vrc7ehv86f9v77e5ygm: "Imperator.co",
-  axelar1xnqn4jsafk8fn9xa68we2hlgp96xftmfpcpdp8: "polkachu",
-  axelar1c273aslmvh9dn9xaf2tu42edjfqgvhy70q8g02: "RockawayX Infra",
-};
 
 const tx = run(
   `cast send 0x0A3b8dC7706C47b6DD87D771DF63875B1c5Cd867 \
@@ -85,6 +48,14 @@ function fetchPage(page: number): any[] {
       const now = new Date();
       const diff = now.getTime() - timestamp.getTime();
       if (diff > wait * 1000) {
+        console.log(
+          "Rejecting ",
+          timestamp,
+          " from ",
+          tx.hash,
+          " as too old with diff of",
+          diff
+        );
         return false;
       }
 
@@ -98,13 +69,16 @@ function fetchPage(page: number): any[] {
           tx.timestamp,
         ];
       } else {
+        console.log(
+          `Found no vote event in ${tx.logs.length} logs and ${tx.logs[0].events.length} events in block ${tx.height}`
+        );
         return false;
       }
     })
     .filter((address: any) => !!address);
   const friendlyVoterData = voters.map(
     (voteData: [string, string, string, string]) => [
-      verifiers[voteData[0]] || `Unknown Verifier: ${voteData[0]}`,
+      KNOWN_VERIFIERS[voteData[0]] || `Unknown Verifier: ${voteData[0]}`,
       voteData[0],
       voteData[1],
       voteData[2],
