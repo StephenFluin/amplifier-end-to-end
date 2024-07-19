@@ -4,8 +4,15 @@
 
 import { existsSync } from "fs";
 import { run } from "./helpers";
+import { source_gateway_deployment } from "./source";
+import * as source from "./source";
 
-export async function instantiateContracts(srcGateway: string) {
+
+/**
+ *
+ * @param srcGatewayAddress The source chain gateway address
+ */
+export async function instantiateContracts(srcGatewayAddress: string) {
   compileContracts();
   const [verifierCodeId, gatewayCodeId, proverCodeId] = deployContracts();
 
@@ -21,7 +28,7 @@ export async function instantiateContracts(srcGateway: string) {
     );
     process.exit(1);
   }
-  let sourceChainGatewayAddress = srcGateway;
+  let sourceChainGatewayAddress = srcGatewayAddress;
 
   console.log(
     "Instantiating verifier with",
@@ -133,7 +140,7 @@ function compileContracts() {
   }
   run(
     `cd axelar-amplifier;
-    git -c advice.detachedHead=false checkout ampd-v0.4.0`,
+    git -c advice.detachedHead=false checkout ampd-v0.6.0`,
     "checkout ampd"
   );
   if (
@@ -195,8 +202,20 @@ function deployContract(contract: string) {
   }
   return codeId;
 }
+/**
+ * Propagate changes in verifiers out to the destination chain
+ */
+export async function rotateVerifierSet() {}
+  rotateVerifierSet();
+  // Call UpdateVerifierSet on Multisig Prover of target chain
+  // axelard tx wasm execute axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '"update_verifier_set"'     --keyring-backend test     --from wallet     --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier   --node http://devnet-verifiers.axelar.dev:26657
+  // ^^^^ requires admin now (or governance)
 
-export function updateVerifierSet() {}
+  // axelard q wasm contract-state smart axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '{"get_proof":{"multisig_session_id":"16"}}' --node http://devnet-verifiers.axelar.dev:26657
+
+  // Look for wasm-proof_under_construction event's sessionId
+  source.rotate_signers(getVerifierSetProof());
+}
 export function supplyRewards() {}
 export function verifyMessages() {
   const gateway =
@@ -236,5 +255,5 @@ export function verifyMessages() {
 export function routeMessages() {}
 export function constructProof() {}
 export function distributeRewards() {}
-export function getWorkerSetProof() {}
+export function getVerifierSetProof() {}
 export function getMessageProof() {}

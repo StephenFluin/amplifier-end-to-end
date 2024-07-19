@@ -33,4 +33,8 @@ export const KNOWN_VERIFIERS: { [key: string]: string } = {
   axelar17xlmznfxda8vd7sryg7vrc7ehv86f9v77e5ygm: "Imperator.co",
   axelar1xnqn4jsafk8fn9xa68we2hlgp96xftmfpcpdp8: "polkachu",
   axelar1c273aslmvh9dn9xaf2tu42edjfqgvhy70q8g02: "RockawayX Infra",
+  axelar1p5dqmyta5yxz7z4tpth8gyz5a6slm2grf99j52: "B-Harvest",
+  axelar1grxuklga9cnt9al8zz72jn6rve8ap3mv0wrpsr: "DSRV",
+  axelar1ymelvu5tcv4gqt4cgs0dhl9eyxalq2w4t4hhsw: "Validatrium",
+  axelar1u8tturfanq6wdcrs5eg55q9tzp0229967nqv3x: "WhisperNode",
 };

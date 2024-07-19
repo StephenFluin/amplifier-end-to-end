@@ -4,6 +4,7 @@ import * as axelar from "./axelar";
 import { downloadAmpd, downloadAxelard } from "./helpers";
 import { run } from "./helpers";
 import { existsSync } from "fs";
+import { registerChainViaGovernance } from "./governance";
 
 const action = process.argv[2];
 if (!action) {
@@ -59,20 +60,24 @@ export async function setupDeployer() {
 
 export async function setupIntegration() {
   await downloadAxelard();
-  const srcGateway = await source.source_gateway_deployment();
-  srcGateway
-    ? axelar.instantiateContracts(srcGateway)
-    : console.error("src gateway undefined");
+  //const srcGateway = await source.source_gateway_deployment();
+  const srcGatewayAddress = "0x8a2DB90356402a00dbfFeeF2629F590B4929Df5F";
+  // @TODO need contract addresses out of this method
+  axelar.instantiateContracts(srcGatewayAddress);
 
   console.log(
     "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
   );
+  // OR
+  // @TODO pass contract addresses and chain name in here
+  registerChainViaGovernance();
+  // verifier.addSupport(integrationName);
   console.log("npm run test-integration");
 }
 
-export async function testIntegration() {
-  axelar.updateVerifierSet();
-  source.rotate_signers(axelar.getWorkerSetProof());
+export async function testIntegration(integrationName: string) {
+  axelar.rotateVerifierSet();
+  source.rotate_signers(axelar.getVerifierSetProof());
   axelar.supplyRewards();
   // verifier.run_ampd()
   source.create_tx(); // Ben
@@ -86,6 +91,7 @@ export async function testIntegration() {
 
 export async function setupVerifier(network = "verifiers") {
   console.log("This script is for amplifier prerelease-6 (ampd 0.6.0)");
+  // @TODO stephen change away from docker to binaries
   verifier.checkDockerInstalled();
   await verifier.runTofnd();
   console.log("Finished setting up tofnd");
@@ -100,16 +106,4 @@ export async function setupVerifier(network = "verifiers") {
     "https://docs.google.com/forms/d/e/1FAIpQLSfQQhk292yT9j8sJF5ARRIE8PpI3LjuFc8rr7xZW7posSLtJA/viewform"
   );
   // TODO remove this exit by clean up tofnd dangling
-}
-
-export async function rotateVerifierKeys() {
-  axelar.updateVerifierSet();
-  // Call UpdateVerifierSet on Multisig Prover of target chain
-  // axelard tx wasm execute axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '"update_verifier_set"'     --keyring-backend test     --from wallet     --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier   --node http://devnet-verifiers.axelar.dev:26657
-  // ^^^^ requires admin now (or governance)
-
-  // axelard q wasm contract-state smart axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '{"get_proof":{"multisig_session_id":"16"}}' --node http://devnet-verifiers.axelar.dev:26657
-
-  // Look for wasm-proof_under_construction event's sessionId
-  source.rotate_signers(axelar.getWorkerSetProof());
 }
