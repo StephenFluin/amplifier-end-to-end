@@ -2,41 +2,63 @@ import * as axelar from "./axelar";
 import { ethers } from "ethers";
 import * as dotenv from "dotenv";
 import { AxelarGatewayABI } from "./axelar-gateway";
-import { run } from './helpers'
-import { existsSync } from 'fs'
-import { exec } from 'child_process';
-import { promisify } from 'util';
-
+import { run } from "./helpers";
+import { existsSync } from "fs";
+import { exec } from "child_process";
+import { promisify } from "util";
 
 const execAsync = promisify(exec);
 
 /**
- * Functions for interacting with the chain being integrated (source/destination)
+ * Get the EVM gateway deployer
  */
-export async function source_gateway_deployment() {
-    if (existsSync('axelar-contract-deployments')) {
-        console.log('Deploying gateway on sepolia')
-        const { stdout, stderr } = await execAsync(
-            `cd axelar-contract-deployments && node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`
-        );
-        const gatewayImplementationRegex = /Gateway Implementation:\s+(\S+)/;
-        const match = stdout.match(gatewayImplementationRegex);
-        if (match) {
-            const gatewayImplementationAddress = match[1];
-            console.log('Src gateway deployed on sepolia at address:', gatewayImplementationAddress);
-            return gatewayImplementationAddress
-        } else {
-            console.error('Gateway Implementation Address not found');
-
-        }
-        if (stderr) console.error('Deployment Errors:', stderr);
-
-    } else {
-        console.log('deployer not setup please run npm run setup-deployment')
-    }
+export async function setupGatewayDeployer() {
+  if (!existsSync("axelar-contract-deployments")) {
+    run(
+      "git clone https://github.com/axelarnetwork/axelar-contract-deployments",
+      "clone repo"
+    );
+  }
+  run(
+    `cd axelar-contract-deployments;git checkout 019d41f81b506d35fa89ffd9ebb3a02719563e09;npm i`,
+    "install dependencies"
+  );
+  console.log(
+    "Deployer cloned in your ./axelar-contract-deployments directory"
+  );
+  console.log(
+    "Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments"
+  );
 }
-export function rotate_signers(proof: any) {}
-export function create_tx() {
+
+/**
+ * Use the EVM gateway deployer to deploy a new gateway
+ */
+export async function deployGatewayOnSepolia(): Promise<string | undefined> {
+  if (existsSync("axelar-contract-deployments")) {
+    console.log("Deploying gateway on sepolia");
+    const { stdout, stderr } = await execAsync(
+      `cd axelar-contract-deployments && node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`
+    );
+    const gatewayImplementationRegex = /Gateway Implementation:\s+(\S+)/;
+    const match = stdout.match(gatewayImplementationRegex);
+    if (match) {
+      const gatewayImplementationAddress = match[1];
+      console.log(
+        "Src gateway deployed on sepolia at address:",
+        gatewayImplementationAddress
+      );
+      return gatewayImplementationAddress;
+    } else {
+      console.error("Gateway Implementation Address not found");
+    }
+    if (stderr) console.error("Deployment Errors:", stderr);
+  } else {
+    console.log("deployer not setup please run npm run setup-deployment");
+  }
+}
+export function rotateSigners(proof: any) {}
+export function createTx(options: any) {
   const sourceGatewayAddress = "0x2A8465a312ebBa54D774972f01D64574a5acFC63";
   const destinationChain = "avalanche";
   const destinationContractAddress =

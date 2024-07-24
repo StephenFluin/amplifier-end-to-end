@@ -11,12 +11,6 @@ import { run } from "./helpers";
 
 const tofnd = "axelarnet/tofnd:v1.0.1";
 
-let verbose = true;
-
-if (verbose) {
-  console.log("Using verbose mode");
-}
-
 export function checkDockerInstalled(): void {
   try {
     execSync("docker --version"); // Use execSync for synchronous execution
@@ -30,20 +24,17 @@ export function checkDockerInstalled(): void {
   }
 }
 
+export function getInstance() {
+  return run(`docker ps -q --filter ancestor=${tofnd}`, "docker process query");
+}
+
 export async function runTofnd() {
-  const instance = run(
-    `docker ps -q --filter ancestor=${tofnd}`,
-    "docker process query"
-  );
+  const instance = getInstance();
 
   // If tofnd is already running, don't start another instance unless the user asks for it
-  const clearFlag = process.argv.indexOf("--clear") === -1 ? false : true;
-  if (instance && !clearFlag) {
+  if (instance) {
     console.log("tofnd is already running");
     return;
-  }
-  if (clearFlag) {
-    stopAllDockers(instance);
   }
 
   let tofndProcess: ChildProcessWithoutNullStreams;
@@ -145,7 +136,8 @@ export async function runTofnd() {
   });
 }
 
-function stopAllDockers(instance: string): void {
+export function stopAllDockers(): void {
+  const instance = getInstance();
   try {
     if (instance.length === 0) {
       // No running docker instances found
@@ -184,7 +176,7 @@ export function configureAmpd(network: string): void {
 }
 
 export function printVerifierAddress(network: string): void {
-  const output = run("./ampd verifier-address", "get verifier address"); // Assuming ampd is in the current directory
+  const output = run("bin/ampd verifier-address", "get verifier address"); // Assuming ampd is in the current directory
   const verifierAddress = /verifier address: (.*)/.exec(output)?.[1];
   if (!verifierAddress) {
     console.log("Error getting verifier address");
@@ -214,7 +206,7 @@ export function printVerifierAddress(network: string): void {
 
 function checkWalletBalance(address: string, network: string): string {
   const output = run(
-    `./axelard q bank balances ${address} --node http://devnet-${network}.axelar.dev:26657`,
+    `bin/axelard q bank balances ${address} --node http://devnet-${network}.axelar.dev:26657`,
     "fetching balance"
   );
 
@@ -228,7 +220,7 @@ function checkWalletBalance(address: string, network: string): string {
 
 export function bondAndRegister(network: string): void {
   run(
-    `./ampd --config devnet-${network}-config.toml bond-verifier validators 100 u${network}`,
+    `bin/ampd --config devnet-${network}-config.toml bond-verifier validators 100 u${network}`,
     "bonding verifier"
   );
 
@@ -238,7 +230,7 @@ export function bondAndRegister(network: string): void {
    */
   let registerResult;
   try {
-    registerResult = execSync("./ampd register-public-key ecdsa", {
+    registerResult = execSync("bin/ampd register-public-key ecdsa", {
       encoding: "utf-8",
       stdio: ["pipe", "pipe", "pipe"],
     });
@@ -256,11 +248,11 @@ export function bondAndRegister(network: string): void {
     }
   }
   run(
-    "./ampd register-chain-support validators avalanche",
+    "bin/ampd register-chain-support validators avalanche",
     "register support for avalanche"
   );
   run(
-    "./ampd register-chain-support validators fantom",
+    "bin/ampd register-chain-support validators fantom",
     "register support for fantom"
   );
   console.log("Support for avalanche and fantom registered");

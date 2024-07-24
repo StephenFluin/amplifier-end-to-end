@@ -5,19 +5,20 @@ import { execSync } from "child_process";
 const ampd_paths = {
   linux:
     "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-linux-amd64-v0.6.0",
-  "darwin-i386":
+  "darwin-amd64":
     "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-darwin-amd64-v0.6.0",
 };
 const axelard_paths = {
   linux:
     "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-linux-amd64-v0.35.6",
-  "darwin-i386":
+  "darwin-amd64":
     "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-amd64-v0.35.6",
 };
 
 /**
  * Download a binary from a given URL and symlink it to a desired name
  * Keeping both files. Download / sym link only as needed
+ * Put everything in bin/ folder
  */
 export async function downloadFile(
   url: string,
@@ -43,11 +44,11 @@ export async function downloadFile(
 }
 
 export function downloadAmpd(): Promise<void> {
-  return downloadBinary(ampd_paths, "ampd");
+  return downloadBinary(ampd_paths, "bin/ampd");
 }
 
 export function downloadAxelard(): Promise<void> {
-  return downloadBinary(axelard_paths, "axelard");
+  return downloadBinary(axelard_paths, "bin/axelard");
 }
 
 async function downloadBinary(
@@ -67,13 +68,17 @@ async function downloadBinary(
   }
 
   const url = paths[system];
-  const filename = url.split("/").pop();
+  const filename = "bin/" + url.split("/").pop();
   if (!filename) {
     console.error("Couldn't determine filename");
     process.exit(1);
   }
 
-  if (fs.existsSync(filename) && fs.readlinkSync(desiredName) == filename) {
+  if (
+    fs.existsSync(filename) &&
+    fs.existsSync(desiredName) &&
+    fs.readlinkSync(desiredName) == filename.split("/").pop()
+  ) {
     console.log(`${filename} already exists, not downloading`);
   } else {
     console.log(`Downloading ${filename} from ${url}`);
@@ -87,13 +92,15 @@ async function downloadBinary(
     }
   }
   try {
+    // Let's make sure we have a pointer from desiredname to filename (not bin/filename)
+    const desiredFile = filename.split("/").pop() || "";
     if (!fs.existsSync(desiredName)) {
-      fs.symlinkSync(filename, desiredName);
+      fs.symlinkSync(desiredFile, desiredName);
       console.log(`'${desiredName}' symlink created`);
-    } else if (fs.readlinkSync(desiredName) != filename) {
-      console.log("Updating symlink to point to", filename);
+    } else if (fs.readlinkSync(desiredName) != desiredFile) {
+      console.log("Updating symlink to point to", desiredFile);
       fs.unlinkSync(desiredName);
-      fs.symlinkSync(filename, desiredName);
+      fs.symlinkSync(desiredFile, desiredName);
     }
   } catch (error) {
     console.error(`Error sym linking ${filename} to ${desiredName}:`, error);
@@ -109,7 +116,7 @@ export function run(command: string, processName: string): string {
     return execSync(command, { encoding: "utf-8" });
   } catch (error: any) {
     console.error(
-      `Error running ${processName}. Stdout:\n${error.stdout}\nStderr:\n${error.stderr}`
+      `Error running ${processName}. Command:\n${command}\nStdout:\n${error.stdout}\nStderr:\n${error.stderr}`
     );
     process.exit(1);
   }

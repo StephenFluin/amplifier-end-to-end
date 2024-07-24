@@ -2,7 +2,7 @@ import { run } from "./helpers";
 import { KNOWN_VERIFIERS } from "./known-verifiers";
 const limit = 30;
 // Wait in seconds
-const wait = 120;
+const wait = 30;
 
 const tx = run(
   `cast send 0x0A3b8dC7706C47b6DD87D771DF63875B1c5Cd867 \
@@ -47,15 +47,21 @@ function fetchPage(page: number): any[] {
       const timestamp = new Date(tx.timestamp);
       const now = new Date();
       const diff = now.getTime() - timestamp.getTime();
-      if (diff > wait * 1000) {
-        console.log(
-          "Rejecting ",
-          timestamp,
-          " from ",
-          tx.hash,
-          " as too old with diff of",
-          diff
-        );
+      const sender = KNOWN_VERIFIERS[tx.tx.body.messages[0].sender];
+
+      // Look 15 seconds longer than wait
+      if (diff > wait * 1000 + 15000) {
+        // Ignore this transaction because it's too old, likely from another round
+        // console.log(
+        //   "Rejecting ",
+        //   timestamp,
+        //   " from ",
+        //   tx.txhash,
+        //   " as too old because it's",
+        //   Math.round(diff / 1000),
+        //   "seconds old, in block",
+        //   tx.height
+        // );
         return false;
       }
 
@@ -69,22 +75,20 @@ function fetchPage(page: number): any[] {
           tx.timestamp,
         ];
       } else {
-        console.log(
-          `Found no vote event in ${tx.logs.length} logs and ${tx.logs[0].events.length} events in block ${tx.height}`
-        );
+        // This tx has no vote event
         return false;
       }
     })
     .filter((address: any) => !!address);
   const friendlyVoterData = voters.map(
     (voteData: [string, string, string, string]) => [
-      KNOWN_VERIFIERS[voteData[0]] || `Unknown Verifier: ${voteData[0]}`,
+      KNOWN_VERIFIERS[voteData[0]] || `Unknown/Internal: ${voteData[0]}`,
       voteData[0],
       voteData[1],
       voteData[2],
     ]
   );
-  console.log("Found voters:", friendlyVoterData);
+  //console.log("Found voters:", friendlyVoterData);
   return friendlyVoterData;
 }
 

@@ -4,27 +4,30 @@
 
 import { existsSync } from "fs";
 import { run } from "./helpers";
-import { source_gateway_deployment } from "./source";
+import { deployGatewayOnSepolia } from "./source";
 import * as source from "./source";
-
+import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
 
 /**
  *
  * @param srcGatewayAddress The source chain gateway address
  */
-export async function instantiateContracts(srcGatewayAddress: string) {
+export async function instantiateContracts(
+  srcGatewayAddress: string,
+  chainName: string
+): Promise<[string, string, string]> {
   compileContracts();
   const [verifierCodeId, gatewayCodeId, proverCodeId] = deployContracts();
 
   console.log("Determine wallet address");
   let address = run(
-    "./axelard keys show wallet --keyring-backend=test",
+    "bin/axelard keys show wallet --keyring-backend=test",
     "show wallet address"
   ).match(/address: (.*)/)?.[1];
 
   if (!address) {
     console.log(
-      "Error getting address from wallet. Please run `./axelard keys add wallet --keyring-backend test`, fund your wallet and try again."
+      "Error getting address from wallet. Please run `bin/axelard keys add wallet --keyring-backend test`, fund your wallet and try again."
     );
     process.exit(1);
   }
@@ -64,7 +67,6 @@ export async function instantiateContracts(srcGatewayAddress: string) {
     { address: address }
   );
 
-  const chainId = "EndToEndTestChain";
   const [proverAddress, proverCreation] = instantiate(
     "prover",
     proverCodeId,
@@ -78,18 +80,20 @@ export async function instantiateContracts(srcGatewayAddress: string) {
       "voting_verifier_address": "${verifierAddress}",
       "signing_threshold": ["1","1"],
       "service_name": "validators",
-      "chain_name":"test",
+      "chain_name":"${chainName}",
       "verifier_set_diff_threshold": 1,
       "encoder": "abi",
       "key_type": "ecdsa",
-      "domain_separator": ${randomHash()}
+      "domain_separator": "${randomHash()}"
   }`,
     { address: address }
   );
   console.log("Finished instantiating contracts");
+  console.log("Chain Name:", chainName);
   console.log("Verifier:", verifierAddress);
   console.log("Gateway:", gatewayAddress);
   console.log("Prover:", proverAddress);
+  return [verifierAddress, gatewayAddress, proverAddress];
 }
 
 function instantiate(
@@ -97,9 +101,9 @@ function instantiate(
   codeId: string,
   paramBlock: string,
   params: { address: string }
-) {
+): [string, string] {
   console.log("Instantiating", contract);
-  const cmd = `./axelard tx wasm instantiate ${codeId} \
+  const cmd = `bin/axelard tx wasm instantiate ${codeId} \
   '${paramBlock}' \
   --keyring-backend test \
   --from wallet \
@@ -111,9 +115,10 @@ function instantiate(
 `;
   console.log("About to run instantiate command:", cmd);
   const creation = run(cmd, `instantiating ${contract}`);
-  const contractAddress = creation.match(
-    /"key":"_contract_address","value":"(.*?)"/
-  )?.[1];
+  const contractAddress =
+    creation.match(/"key":"_contract_address","value":"(.*?)"/)?.[1] ||
+    "ERROR UNKNOWN ADDRESS";
+
   return [contractAddress, creation];
 }
 function randomHash() {
@@ -123,15 +128,12 @@ function randomHash() {
     numbers.push(Math.floor(Math.random() * 256));
   }
 
-  return `[${numbers.join(",")}]`;
+  // @TODO don't hard this
+  return `856AAA4D78E06EA2E4B82705A350AD1CABEE7A7F7669F1C48199D27879818F84`;
 }
 function compileContracts() {
   console.log("Downloading CosmWasm contracts from axelar-amplifier via git");
 
-  const clearFlag = process.argv.indexOf("--clear") === -1 ? false : true;
-  if (clearFlag) {
-    run("rm -rf axelar-amplifier", "remove and replace old repo");
-  }
   if (!existsSync("axelar-amplifier")) {
     run(
       "git clone https://github.com/axelarnetwork/axelar-amplifier",
@@ -140,17 +142,17 @@ function compileContracts() {
   }
   run(
     `cd axelar-amplifier;
+    git fetch;
     git -c advice.detachedHead=false checkout ampd-v0.6.0`,
     "checkout ampd"
   );
   if (
     existsSync("axelar-amplifier/artifacts/voting_verifier.wasm") &&
     existsSync("axelar-amplifier/artifacts/gateway.wasm") &&
-    existsSync("axelar-amplifier/artifacts/multisig_prover.wasm") &&
-    !clearFlag
+    existsSync("axelar-amplifier/artifacts/multisig_prover.wasm")
   ) {
     console.log(
-      "Skipping compilation, artifacts already exists. To update add '-- --clear'"
+      "Skipping compilation, artifacts already exists. To update add '--clear'"
     );
     return;
   }
@@ -159,7 +161,7 @@ function compileContracts() {
     `cd axelar-amplifier;docker run --rm -v "$(pwd)":/code \
   --mount type=volume,source="$(basename "$(pwd)")_cache",target=/target \
   --mount type=volume,source=registry_cache,target=/usr/local/cargo/registry \
-  cosmwasm/optimizer:0.15.1
+  cosmwasm/optimizer:0.16.0
   `,
     "Compile contracts"
   );
@@ -187,7 +189,7 @@ function deployContracts(): [string, string, string] {
 function deployContract(contract: string) {
   console.log("Deploying", contract);
   const output = run(
-    `./axelard tx wasm store axelar-amplifier/artifacts/${contract}.wasm \
+    `bin/axelard tx wasm store axelar-amplifier/artifacts/${contract}.wasm \
     --keyring-backend test \
     --from wallet \
     --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier \
@@ -205,18 +207,50 @@ function deployContract(contract: string) {
 /**
  * Propagate changes in verifiers out to the destination chain
  */
-export async function rotateVerifierSet() {}
-  rotateVerifierSet();
+export async function rotateVerifierSet() {
   // Call UpdateVerifierSet on Multisig Prover of target chain
   // axelard tx wasm execute axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '"update_verifier_set"'     --keyring-backend test     --from wallet     --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier   --node http://devnet-verifiers.axelar.dev:26657
+  // axelard tx wasm execute axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '"update_verifier_set"' --from=amplifier --gas auto --gas-adjustment 1.5 --gas-prices 0.007uverifiers
   // ^^^^ requires admin now (or governance)
 
   // axelard q wasm contract-state smart axelar1qt0gkcrvcpv765k8ec4tl2svvg6hd3e3td8pvg2fsncrt3dzjefswsq3w2 '{"get_proof":{"multisig_session_id":"16"}}' --node http://devnet-verifiers.axelar.dev:26657
 
   // Look for wasm-proof_under_construction event's sessionId
-  source.rotate_signers(getVerifierSetProof());
+  source.rotateSigners(getVerifierSetProof());
 }
-export function supplyRewards() {}
+export function supplyRewards(options: {
+  network: string;
+  [key: string]: any;
+}) {
+  console.log("Supplying rewards to 2 pools");
+  const rewards = AMPLIFIER_CONFIG[options.network].REWARDS;
+
+  const reward = (contract: string) => {
+    const cmd = ``;
+    run(
+      `axelard tx wasm execute ${rewards} \
+    '{
+        "add_rewards":
+            {
+                "pool_id":
+                    {
+                        "chain_name":"${options.chainName}",
+                        "contract":"${contract}"
+                    }
+            }
+    }' \
+    --amount 100${AMPLIFIER_CONFIG[options.network].CURRENCY} \
+    --chain-id ${options.network} \
+    --keyring-backend test \
+    --from wallet \
+    --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier \
+    --node ${AMPLIFIER_CONFIG[options.network].RPC}`,
+      "supply rewards to pool"
+    );
+  };
+  reward(options.verifier);
+  reward(options.prover);
+}
 export function verifyMessages() {
   const gateway =
     "axelar17llq4ch6xwwmmpz2uc0qgyqs0mruhd5888a49n50z79q3cdrceushfjq3h";
@@ -232,7 +266,7 @@ export function verifyMessages() {
 
   // Example tx:
   // 0xc9eb0d116e1f79511f039cc58a3a531f72e704bc18a46d370de160941372bcc3
-  const cmd = `./axelard tx wasm execute ${gateway} \
+  const cmd = `bin/axelard tx wasm execute ${gateway} \
     '{"verify_messages":
       [{"cc_id":{
         "chain":"${chainName}",

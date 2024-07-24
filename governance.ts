@@ -1,5 +1,7 @@
 import { run } from "./helpers";
 export async function registerChainViaGovernance() {
+  // TESTING
+  return;
   // Submit proposals
   run(
     `export ROUTER_CONTRACT_ADDRESS="axelar14jjdxqhuxk803e9pq64w4fgf385y86xxhkpzswe9crmu6vxycezst0zq8y"

@@ -24,7 +24,7 @@ const SENDER = "0x0a3b8dc7706c47b6dd87d771df63875b1c5cd867";
 const PAYLOAD_HASH =
   "220f68445e3cec114bff50cd6b251e3deabc7684b10280c2116b20bcc6795a96";
 
-let cmd = `./axelard tx wasm execute ${AXELAR_CHAIN_GATEWAY_CONTRACT}   '{"verify_messages":
+let cmd = `bin/axelard tx wasm execute ${AXELAR_CHAIN_GATEWAY_CONTRACT}   '{"verify_messages":
 [
      {
          "cc_id":{

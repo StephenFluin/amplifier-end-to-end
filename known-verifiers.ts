@@ -37,4 +37,7 @@ export const KNOWN_VERIFIERS: { [key: string]: string } = {
   axelar1grxuklga9cnt9al8zz72jn6rve8ap3mv0wrpsr: "DSRV",
   axelar1ymelvu5tcv4gqt4cgs0dhl9eyxalq2w4t4hhsw: "Validatrium",
   axelar1u8tturfanq6wdcrs5eg55q9tzp0229967nqv3x: "WhisperNode",
+  axelar19dlv7fafynh3wahee00zapurht7r39ef2yxx0e: "Inter Blockchain Services",
+  axelar1vxlhfe7v3zs5q3rlv3tk5ptem5vk3k8ng59jjc: "AutoStake.com",
+  axelar1kd5zk9ces4hmrg7kjgda6n5gpzysnr3cgdagrd: "Redbooker",
 };

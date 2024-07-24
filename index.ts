@@ -1,86 +1,184 @@
 import * as verifier from "./verifier";
 import * as source from "./source";
 import * as axelar from "./axelar";
-import { downloadAmpd, downloadAxelard } from "./helpers";
 import { run } from "./helpers";
-import { existsSync } from "fs";
-import { registerChainViaGovernance } from "./governance";
+import { downloadAmpd, downloadAxelard } from "./helpers";
 
-const action = process.argv[2];
-if (!action) {
-  console.log("please specify an action, `integrator`, `verifier` or `tx`");
-  process.exit(1);
-}
-console.log("Running", action, "workflow");
-const network =
-  process.argv.indexOf("--amplifier") === -1 ? "verifiers" : "amplifier";
-switch (action) {
-  case "setupDeployment":
-    setupDeployer();
-    break;
-  case "integrator":
-    setupIntegration();
-    break;
-  case "verifier":
-    setupVerifier(network);
-    break;
-  case "tx":
-    source.create_tx();
-    break;
-  case "verify":
-    axelar.verifyMessages();
-    break;
-  default:
-    console.error("Invalid action");
-}
+import { Command } from "commander";
+import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import { testFinality } from "./test-finality";
+export type Network = "devnet-amplifier" | "devnet-verifiers";
 
-//setup gateway deployment
-export async function setupDeployer() {
-  const clearFlag = process.argv.indexOf("--clear") === -1 ? false : true;
-  if (clearFlag)
-    run("rm -rf axelar-contract-deployments", "remove and replace old repo");
+const program = new Command();
 
-  if (!existsSync("axelar-contract-deployments")) {
-    run(
-      "git clone https://github.com/axelarnetwork/axelar-contract-deployments",
-      "clone repo"
-    );
-    run(
-      `cd axelar-contract-deployments;git checkout 019d41f81b506d35fa89ffd9ebb3a02719563e09;npm i`,
-      "install dependencies"
-    );
+program.name("ae2e");
+program.description(
+  "Amplifier End to End - Automated end-to-end testing for Amplifier"
+);
+program.version("0.0.1");
+
+program
+  .command("deploy-evm-gateway")
+  .description("Fetch the EVM deployer and deploy a gateway to Sepolia")
+  .action(() => {
+    source.setupGatewayDeployer();
+    source.deployGatewayOnSepolia();
+  });
+
+program
+  .command("new-integration")
+  .description("Set up a new integration")
+  .option("-n, --network <network>", "network to deploy to", "devnet-amplifier")
+  .option("-x, --clear", "clear contracts repo and recompile", false)
+  .option(
+    "-g, --evm-gateway <gateway>",
+    'the EVM address of a gateway or "auto" to automatically deploy',
+    "0x8a2DB90356402a00dbfFeeF2629F590B4929Df5F"
+  )
+  .option(
+    "-c, --chain-name",
+    "the name of the chain",
+    "devrel" +
+      new Date().toISOString().substring(0, 10) +
+      "-" +
+      Math.round(Math.random() * 1000)
+  )
+  .action(newIntegration);
+
+program
+  .command("test-integration")
+  .description(
+    "Test a recently completed integration by sending a message and delivering it"
+  )
+  .argument("<chain name>", "eg devrel2021-09-01-123")
+  .argument("<external gateway>", "eg 0x098...")
+  .argument("<verifier>", "address of your Amplifier verifier")
+  .argument("<gateway>", "address of your Amplifier gateway")
+  .argument("<prover>", "address of your Amplifier prover")
+  .option("-n, --network <network>", "network to deploy to", "devnet-amplifier")
+  .action(testIntegration);
+
+program
+  .command("new-verifier")
+  .description("Set up a new verifier")
+  .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
+  .option("-x, --clear", "clear running containers")
+  .action((options) => {
+    newVerifier(options);
+  });
+
+program
+  .command("test-verifiers")
+  .description(
+    "Run a test transaction from Fiji->Sepolia and report on successful verifiers"
+  );
+
+program
+  .command("test-finality")
+  .description(
+    "Run a test transaction from Sepolia->Fiji and try to relay and have verifiers vote before finality"
+  )
+  .action(testFinality);
+
+program.parse(process.argv);
+
+export async function newIntegration(options: any) {
+  console.log("Setting up new integration with options:", options);
+
+  let externalGateway = options.evmGateway;
+
+  if (externalGateway === "auto") {
+    source.setupGatewayDeployer();
+    externalGateway = await source.deployGatewayOnSepolia();
+    if (!externalGateway) {
+      console.error(
+        "Failed to deploy gateway on Sepolia, stopping integration setup"
+      );
+      process.exit(1);
+    }
   }
-  console.log(
-    "Deployer cloned in your ./axelar-contract-deployments directory"
-  );
-  console.log(
-    "Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments"
-  );
-}
 
-export async function setupIntegration() {
+  if (options.clear) {
+    run("rm -rf axelar-amplifier", "remove and replace old repo");
+    run("rm -rf axelar-contract-deployments", "remove and replace old repo");
+  }
+
+  console.log("Setting up new chain integration for chain:", options.chainName);
   await downloadAxelard();
-  //const srcGateway = await source.source_gateway_deployment();
-  const srcGatewayAddress = "0x8a2DB90356402a00dbfFeeF2629F590B4929Df5F";
-  // @TODO need contract addresses out of this method
-  axelar.instantiateContracts(srcGatewayAddress);
-
-  console.log(
-    "Please fill out form here: https://docs.google.com/forms/d/e/1FAIpQLSchD7P1WfdSCQfaZAoqX7DyqJOqYKxXle47yrueTbOgkKQDiQ/viewform"
+  const [verifier, gateway, prover] = await axelar.instantiateContracts(
+    externalGateway,
+    options.chainName
   );
-  // OR
-  // @TODO pass contract addresses and chain name in here
-  registerChainViaGovernance();
-  // verifier.addSupport(integrationName);
-  console.log("npm run test-integration");
+
+  printIntegratorApprovalSteps(
+    options.network,
+    options.chainName,
+    externalGateway,
+    verifier,
+    gateway,
+    prover
+  );
 }
 
-export async function testIntegration(integrationName: string) {
-  axelar.rotateVerifierSet();
-  source.rotate_signers(axelar.getVerifierSetProof());
-  axelar.supplyRewards();
+export function printIntegratorApprovalSteps(
+  network: Network,
+  chainName: string,
+  externalGateway: string,
+  ampVerifierAddress: string,
+  ampGatewayAddress: string,
+  ampProverAddress: string
+) {
+  console.log(`You have three options.`);
+  console.log(`1. Request whitelisting (devnet) at: `);
+  console.log(
+    "    https://docs.google.com/forms/d/e/1FAIpQLSfQQhk292yT9j8sJF5ARRIE8PpI3LjuFc8rr7xZW7posSLtJA/viewform"
+  );
+  console.log("2. Authorize yourself (devnet permissioned):");
+
+  // Approve at the Amplifier Router
+  const router = AMPLIFIER_CONFIG[network].ROUTER;
+  const multisig = AMPLIFIER_CONFIG[network].MULTISIG;
+  const currency = AMPLIFIER_CONFIG[network].CURRENCY;
+  console.log(`axelard tx wasm execute ${router} \
+  '{
+        "register_chain": {
+            "chain":"${chainName}",
+            "gateway_address": "${ampGatewayAddress}",
+            "msg_id_format": "hex_tx_hash_and_event_index"
+        }
+    }' \
+  --from amplifier --gas auto --gas-adjustment 1.5 --gas-prices 0.007${currency}`);
+  console.log(`axelard tx wasm execute ${multisig} \
+  '{"authorize_caller":{"contract_address":"${ampProverAddress}"}}' \
+  --from amplifier --gas auto --gas-adjustment 2 --gas-prices 0.007${currency}`);
+  console.log("Or submit a governance proposal: https://docs.axelar.dev/");
+  console.log("When you are connected, now you can test the integration with:");
+  console.log(
+    `ae2e test-integration ${chainName} ${externalGateway} ${ampVerifierAddress} ${ampGatewayAddress} ${ampProverAddress} -n ${network}`
+  );
+}
+
+export async function testIntegration(
+  chainName: string,
+  externalGateway: string,
+  verifier: string,
+  gateway: string,
+  prover: string,
+  options: any
+) {
+  options = {
+    chainName,
+    externalGateway,
+    verifier,
+    gateway,
+    prover,
+    ...options,
+  };
+  // axelar.rotateVerifierSet();
+  // source.rotate_signers(axelar.getVerifierSetProof());
+  axelar.supplyRewards(options);
   // verifier.run_ampd()
-  source.create_tx(); // Ben
+  source.createTx(options);
   axelar.verifyMessages();
   axelar.routeMessages();
   axelar.constructProof();
@@ -89,8 +187,13 @@ export async function testIntegration(integrationName: string) {
   axelar.distributeRewards();
 }
 
-export async function setupVerifier(network = "verifiers") {
+export async function newVerifier(options: any) {
   console.log("This script is for amplifier prerelease-6 (ampd 0.6.0)");
+
+  const network = options.network;
+  if (options.clear) {
+    verifier.stopAllDockers();
+  }
   // @TODO stephen change away from docker to binaries
   verifier.checkDockerInstalled();
   await verifier.runTofnd();

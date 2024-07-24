@@ -1,10 +1,10 @@
 {
   "name": "amplifier-end-to-end",
   "version": "1.0.0",
-  "description": "- Python 3 - Docker (running) - `requests` python library - `axelard` in your path",
+  "description": "Amplifier end to end tools for integrating, verifying, and relaying",
   "main": "index.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test-verifiers": "ts-node test-verifiers.ts",
     "verifier": "ts-node index.ts verifier",
     "integrator": "ts-node index.ts integrator",
     "tx": "ts-node index.ts tx",
@@ -24,6 +24,7 @@
   "dependencies": {
     "@types/node": "^20.12.12",
     "axios": "^1.7.2",
+    "commander": "^12.1.0",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0",
     "ts-node": "^10.9.2"

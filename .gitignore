@@ -4,8 +4,11 @@ ampd
 ampd*
 axelard
 axelard*
-axelar_amplifier/*
-.env
-private.mneumonic
 tofnd
 tofnd*
+axelar_amplifier/*
+axelar-contract-deployments/*
+.env
+private.mneumonic
+bin/*
+notes/*
