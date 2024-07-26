@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import { execSync } from "child_process";
+import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
 
 const ampd_paths = {
   linux:
@@ -60,11 +61,15 @@ async function downloadBinary(
     // amd64 for all macs intentionally
     system += "-" + "amd64";
   }
-  console.log("system detected as", system);
+  //console.log("system detected as", system);
 
   if (!(system in paths)) {
     console.error(`Unsupported system: ${system}`);
     process.exit(1);
+  }
+  // Ensure bin folder exist
+  if (!fs.existsSync("bin")) {
+    fs.mkdirSync("bin");
   }
 
   const url = paths[system];
@@ -79,7 +84,7 @@ async function downloadBinary(
     fs.existsSync(desiredName) &&
     fs.readlinkSync(desiredName) == filename.split("/").pop()
   ) {
-    console.log(`${filename} already exists, not downloading`);
+    // console.log(`${filename} already exists, not downloading`);
   } else {
     console.log(`Downloading ${filename} from ${url}`);
     try {
@@ -120,4 +125,53 @@ export function run(command: string, processName: string): string {
     );
     process.exit(1);
   }
+}
+
+export function getTxHashFromCast(output: string): string {
+  return (output.match(/transactionHash\s*(0x[a-zA-Z0-9]*)/) || [
+    ,
+    "Unknown Tx Hash",
+  ])[1];
+}
+/**
+ * Take in an axelar verifyMessages transaction and return poll and contract.
+ */
+export function getPollFromRelay(output: string): string {
+  const event = JSON.parse(output).logs[0].events.find(
+    (event: any) => event.type === "wasm-messages_poll_started"
+  );
+  const pollId = event.attributes
+    .find((attribute: any) => attribute.key === "poll_id")
+    .value.replace(/"/g, "");
+  return pollId;
+}
+
+export function relay(
+  network: string = "devnet-verifiers",
+  sourceWasmGateway: string,
+  sourceChain: string,
+  transactionHash: string,
+  transactionIndex: number = 0,
+  destinationChain: string,
+  destinationAddress: string,
+  sourceAddress: string,
+  payloadHash: string
+) {
+  const cmd = `bin/axelard tx wasm execute ${sourceWasmGateway} \
+  '{"verify_messages":
+      [{"cc_id":{
+        "chain":"${sourceChain}",
+        "id":"${transactionHash}-${transactionIndex}"},
+        "destination_chain":"${destinationChain}",
+        "destination_address":"${destinationAddress}",
+        "source_address":"${sourceAddress}",
+        "payload_hash":"${payloadHash}"}]
+    }' \
+  --keyring-backend test \
+  --from wallet \
+  --gas auto --gas-adjustment 1.5 \
+  --gas-prices 0.007${AMPLIFIER_CONFIG[network].CURRENCY} \
+  --chain-id=${network} \
+  --node ${AMPLIFIER_CONFIG[network].RPC}`;
+  return run(cmd, "relay the message to the Axelar network");
 }

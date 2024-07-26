@@ -7,6 +7,7 @@ import { run } from "./helpers";
 import { deployGatewayOnSepolia } from "./source";
 import * as source from "./source";
 import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import pc from "picocolors";
 
 /**
  *
@@ -27,7 +28,8 @@ export async function instantiateContracts(
 
   if (!address) {
     console.log(
-      "Error getting address from wallet. Please run `bin/axelard keys add wallet --keyring-backend test`, fund your wallet and try again."
+      pc.red("Error") +
+        " getting address from wallet. Please run `bin/axelard keys add wallet --keyring-backend test`, fund your wallet and try again."
     );
     process.exit(1);
   }
@@ -89,10 +91,10 @@ export async function instantiateContracts(
     { address: address }
   );
   console.log("Finished instantiating contracts");
-  console.log("Chain Name:", chainName);
-  console.log("Verifier:", verifierAddress);
-  console.log("Gateway:", gatewayAddress);
-  console.log("Prover:", proverAddress);
+  console.log("Chain Name:", pc.green(chainName));
+  console.log("Verifier:", pc.green(verifierAddress));
+  console.log("Gateway:", pc.green(gatewayAddress));
+  console.log("Prover:", pc.green(proverAddress));
   return [verifierAddress, gatewayAddress, proverAddress];
 }
 
@@ -199,7 +201,9 @@ function deployContract(contract: string) {
   );
   let codeId = output.match(/code_id","value":"(\d+)"/)?.[1];
   if (!codeId) {
-    console.log("ERROR deploying, couldn't find codeId:\n" + output);
+    console.log(
+      pc.red("ERROR") + " deploying, couldn't find codeId:\n" + output
+    );
     process.exit(1);
   }
   return codeId;

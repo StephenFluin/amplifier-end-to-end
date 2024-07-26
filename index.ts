@@ -7,6 +7,8 @@ import { downloadAmpd, downloadAxelard } from "./helpers";
 import { Command } from "commander";
 import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
 import { testFinality } from "./test-finality";
+import { testVerifiers } from "./test-verifiers";
+import { testRotation } from "./test-rotation";
 export type Network = "devnet-amplifier" | "devnet-verifiers";
 
 const program = new Command();
@@ -71,7 +73,8 @@ program
   .command("test-verifiers")
   .description(
     "Run a test transaction from Fiji->Sepolia and report on successful verifiers"
-  );
+  )
+  .action(testVerifiers);
 
 program
   .command("test-finality")
@@ -79,6 +82,16 @@ program
     "Run a test transaction from Sepolia->Fiji and try to relay and have verifiers vote before finality"
   )
   .action(testFinality);
+
+program
+  .command("test-rotation")
+  .description(
+    "Rotate keys on a chain and relay that rotation to the external gateway."
+  )
+  .option("-c, --chain <chain>", "target chain", "avalanche")
+  .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
+  .option("-m, --multisig-session-id <id>", "multisig session id")
+  .action(testRotation);
 
 program.parse(process.argv);
 
