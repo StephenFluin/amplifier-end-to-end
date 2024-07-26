@@ -27,5 +27,11 @@ export function testRotation(options: any) {
 
     const hexData = proofData.match(/execute_data: (.*)/)![1];
     console.log("hex to execute is", hexData.length, "long");
+    // Submit on external ethereum-sepolia devnet-verifiers gateway
+    const result = run(
+      `cast send 0x2A8465a312ebBa54D774972f01D64574a5acFC63 0x${hexData} --rpc-url https://rpc.ankr.com/eth_sepolia --mnemonic-path ./private.mneumonic`,
+      "submit the signer rotation transaction on external chain"
+    );
+    console.log(result);
   }
 }
