@@ -6,7 +6,7 @@ import { existsSync } from "fs";
 import { run } from "./helpers";
 import { deployGatewayOnSepolia } from "./source";
 import * as source from "./source";
-import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import { getConfig } from "./configs/amplifier-deployments";
 import pc from "picocolors";
 
 /**
@@ -222,12 +222,13 @@ export async function rotateVerifierSet() {
   // Look for wasm-proof_under_construction event's sessionId
   source.rotateSigners(getVerifierSetProof());
 }
-export function supplyRewards(options: {
+export async function supplyRewards(options: {
   network: string;
   [key: string]: any;
 }) {
+  const config = await getConfig(options.network);
   console.log("Supplying rewards to 2 pools");
-  const rewards = AMPLIFIER_CONFIG[options.network].REWARDS;
+  const rewards = config.axelar.contracts.Rewards.address;
 
   const reward = (contract: string) => {
     const cmd = ``;
@@ -243,12 +244,12 @@ export function supplyRewards(options: {
                     }
             }
     }' \
-    --amount 100${AMPLIFIER_CONFIG[options.network].CURRENCY} \
+    --amount 100${config.axelar.contracts.Rewards.rewardsDenom} \
     --chain-id ${options.network} \
     --keyring-backend test \
     --from wallet \
-    --gas auto --gas-adjustment 1.5 --gas-prices 0.007uamplifier \
-    --node ${AMPLIFIER_CONFIG[options.network].RPC}`,
+    --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
+    --node ${config.axelar.rpc}`,
       "supply rewards to pool"
     );
   };

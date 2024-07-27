@@ -5,7 +5,7 @@ import { run } from "./helpers";
 import { downloadAmpd, downloadAxelard } from "./helpers";
 
 import { Command } from "commander";
-import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import { getConfig } from "./configs/amplifier-deployments";
 import { testFinality } from "./test-finality";
 import { testVerifiers } from "./test-verifiers";
 import { testRotation } from "./test-rotation";
@@ -123,7 +123,7 @@ export async function newIntegration(options: any) {
     options.chainName
   );
 
-  printIntegratorApprovalSteps(
+  await printIntegratorApprovalSteps(
     options.network,
     options.chainName,
     externalGateway,
@@ -133,7 +133,7 @@ export async function newIntegration(options: any) {
   );
 }
 
-export function printIntegratorApprovalSteps(
+export async function printIntegratorApprovalSteps(
   network: Network,
   chainName: string,
   externalGateway: string,
@@ -141,6 +141,8 @@ export function printIntegratorApprovalSteps(
   ampGatewayAddress: string,
   ampProverAddress: string
 ) {
+  const config = await getConfig(network);
+
   console.log(`You have three options.`);
   console.log(`1. Request whitelisting (devnet) at: `);
   console.log(
@@ -149,9 +151,9 @@ export function printIntegratorApprovalSteps(
   console.log("2. Authorize yourself (devnet permissioned):");
 
   // Approve at the Amplifier Router
-  const router = AMPLIFIER_CONFIG[network].ROUTER;
-  const multisig = AMPLIFIER_CONFIG[network].MULTISIG;
-  const currency = AMPLIFIER_CONFIG[network].CURRENCY;
+  const router = config.axelar.contracts.Router.address;
+  const multisig = config.axelar.contracts.Multisig.address;
+
   console.log(`axelard tx wasm execute ${router} \
   '{
         "register_chain": {
@@ -160,10 +162,10 @@ export function printIntegratorApprovalSteps(
             "msg_id_format": "hex_tx_hash_and_event_index"
         }
     }' \
-  --from amplifier --gas auto --gas-adjustment 1.5 --gas-prices 0.007${currency}`);
+  --from amplifier --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice}`);
   console.log(`axelard tx wasm execute ${multisig} \
   '{"authorize_caller":{"contract_address":"${ampProverAddress}"}}' \
-  --from amplifier --gas auto --gas-adjustment 2 --gas-prices 0.007${currency}`);
+  --from amplifier --gas auto --gas-adjustment 2 --gas-prices ${config.axelar.gasPrice}`);
   console.log("Or submit a governance proposal: https://docs.axelar.dev/");
   console.log("When you are connected, now you can test the integration with:");
   console.log(

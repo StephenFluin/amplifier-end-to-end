@@ -38,6 +38,9 @@ export function testVerifiers() {
     for (let verifier of sortByFirstItem(results)) {
       console.log(`${verifier[0]} (block ${verifier[2]})`);
     }
+    if (results.length === 0) {
+      console.error(pc.red("No votes found, problem with relayer?"));
+    }
   }, wait * 1000);
 
   function fetchPage(page: number): any[] {

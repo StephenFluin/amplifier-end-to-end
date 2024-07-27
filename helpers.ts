@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import * as os from "os";
 import { execSync } from "child_process";
-import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import { getConfig } from "./configs/amplifier-deployments";
 
 const ampd_paths = {
   linux:
@@ -146,9 +146,8 @@ export function getPollFromRelay(output: string): string {
   return pollId;
 }
 
-export function relay(
+export async function relay(
   network: string = "devnet-verifiers",
-  sourceWasmGateway: string,
   sourceChain: string,
   transactionHash: string,
   transactionIndex: number = 0,
@@ -157,7 +156,9 @@ export function relay(
   sourceAddress: string,
   payloadHash: string
 ) {
-  const cmd = `bin/axelard tx wasm execute ${sourceWasmGateway} \
+  const config = await getConfig(network);
+
+  const cmd = `bin/axelard tx wasm execute ${config.axelar.contracts.Gateway[sourceChain].address} \
   '{"verify_messages":
       [{"cc_id":{
         "chain":"${sourceChain}",
@@ -170,8 +171,8 @@ export function relay(
   --keyring-backend test \
   --from wallet \
   --gas auto --gas-adjustment 1.5 \
-  --gas-prices 0.007${AMPLIFIER_CONFIG[network].CURRENCY} \
+  --gas-prices ${config.axelar.gasPrice} \
   --chain-id=${network} \
-  --node ${AMPLIFIER_CONFIG[network].RPC}`;
+  --node ${config.axelar.rpc}`;
   return run(cmd, "relay the message to the Axelar network");
 }

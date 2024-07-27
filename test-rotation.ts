@@ -1,16 +1,22 @@
-import { AMPLIFIER_CONFIG } from "./configs/amplifier-deployments";
+import { getConfig } from "./configs/amplifier-deployments";
 import { run } from "./helpers";
 
-export function testRotation(options: any) {
+export async function testRotation(options: any) {
   const chain = options.chain;
   const network = options.network;
   // Call UpdateVerifierSet on Multisig Prover of target chain
-  const prover = AMPLIFIER_CONFIG[options.network].PROVER[chain];
-  console.log(AMPLIFIER_CONFIG[options.network].PROVER, "chain is", chain);
+  const config = await getConfig(network);
+
+  const prover = config.axelar.contracts.MultisigProver[chain].address;
+  console.log(
+    config.axelar.contracts.MultisigProver[chain].address,
+    "chain is",
+    chain
+  );
   const cmd = `axelard tx wasm execute ${prover} \
    '"update_verifier_set"' \
     --from amplifier  \
-    --gas auto --gas-adjustment 1.5 --gas-prices 0.007${AMPLIFIER_CONFIG[network].CURRENCY} \
+    --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
     --chain-id=${network}
   `;
   console.log("Run with authorized user:\n", cmd);
