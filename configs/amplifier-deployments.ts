@@ -2,11 +2,14 @@
 let cache: { [network: string]: any } = {};
 export async function getConfig(network: string) {
   if (!cache[network]) {
-    cache[network] = await (
-      await fetch(
-        `https://raw.githubusercontent.com/axelarnetwork/axelar-contract-deployments/main/axelar-chains-config/info/${network}.json`
-      )
-    ).json();
+    const path = `https://raw.githubusercontent.com/axelarnetwork/axelar-contract-deployments/main/axelar-chains-config/info/${network}.json`;
+
+    try {
+      cache[network] = await (await fetch(path)).json();
+    } catch (error: any) {
+      console.error("Couldn't download config file from github", path, error);
+      process.exit(1);
+    }
   }
   return cache[network];
 }
