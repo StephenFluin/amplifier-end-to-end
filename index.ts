@@ -103,6 +103,7 @@ program
   .option("-c, --chain <chain>", "target chain", "avalanche")
   .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
   .option("-m, --multisig-session-id <id>", "multisig session id")
+  .option("-i, --message-id <id>", "message id")
   .action(testRotation);
 
 program.parse(process.argv);

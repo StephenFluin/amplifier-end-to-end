@@ -116,9 +116,18 @@ async function downloadBinary(
 /**
  * Helper method that runs using execSync and reports errors and exits on failure
  */
-export function run(command: string, processName: string): string {
+export function run(
+  command: string,
+  processName: string,
+  fake: boolean = false
+): string {
   try {
-    return execSync(command, { encoding: "utf-8" });
+    if (!fake) {
+      return execSync(command, { encoding: "utf-8" });
+    } else {
+      console.log("Would run:\n", command);
+      return "faked";
+    }
   } catch (error: any) {
     console.error(
       `Error running ${processName}. Command:\n${command}\nStdout:\n${error.stdout}\nStderr:\n${error.stderr}`
