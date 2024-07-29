@@ -78,6 +78,18 @@ program
 
 program
   .command("test-finality")
+  .option("-c, --chain <chain>", "source chain for message", "ethereum-sepolia")
+  .option(
+    "-d, --destination <chain>",
+    "destination chain for message",
+    "avalanche"
+  )
+  .option(
+    "-w, --wait <minutes>",
+    "how long to wait before relaying the message",
+    "0"
+  )
+  .option("-n, --network <network>", "network used", "devnet-verifiers")
   .description(
     "Run a test transaction from Sepolia->Fiji and try to relay and have verifiers vote before finality"
   )

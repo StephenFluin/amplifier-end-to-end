@@ -17,7 +17,8 @@ export async function testRotation(options: any) {
    '"update_verifier_set"' \
     --from amplifier  \
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
-    --chain-id=${network}
+    --chain-id=${network} | grep -o 'multisig_session_id","value":"\\\\"[0-9]\\+' | grep -o '[0-9]\\+'
+
   `;
   console.log("Run with authorized user:\n", cmd);
 
@@ -27,7 +28,7 @@ export async function testRotation(options: any) {
     const proofData = run(
       `axelard q wasm contract-state smart ${prover} \
        '{"get_proof":{"multisig_session_id":"${options.multisigSessionId}"}}' \
-        --node http://devnet-verifiers.axelar.dev:26657`,
+        --node ${config.axelar.rpc}`,
       "get proof"
     );
 
@@ -35,7 +36,8 @@ export async function testRotation(options: any) {
     console.log("hex to execute is", hexData.length, "long");
     // Submit on external ethereum-sepolia devnet-verifiers gateway
     const result = run(
-      `cast send 0x2A8465a312ebBa54D774972f01D64574a5acFC63 0x${hexData} --rpc-url https://rpc.ankr.com/eth_sepolia --mnemonic-path ./private.mneumonic`,
+      `cast send ${config.chains[chain].contracts.AxelarGateway.address} 0x${hexData} \
+       --rpc-url ${config.chains[chain].rpc} --mnemonic-path ./private.mneumonic`,
       "submit the signer rotation transaction on external chain"
     );
     console.log(result);

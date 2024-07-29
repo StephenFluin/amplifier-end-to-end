@@ -12,10 +12,10 @@ import {
  * See if verifiers will vote before finality has been achieved.
  * Send a Tx, relay it early, and then check for votes
  */
-export async function testFinality() {
-  const chainName = "ethereum-sepolia";
+export async function testFinality(options: any) {
+  const chainName = options.chain;
   const destinationChainName = "avalanche";
-  const network = "devnet-verifiers";
+  const network = options.network;
 
   const config = await getConfig(network);
 
@@ -34,21 +34,22 @@ export async function testFinality() {
 
   if (transactionHash) {
     console.log(
-      "TransactionHash of Sepolia->Avalanche via " + pc.green(network) + ":",
-      pc.green(transactionHash)
+      `TransactionHash of ${chainName}->${destinationChainName} via ${pc.green(
+        network
+      )}:${pc.green(transactionHash)}`
     );
   } else {
     console.log("failure!");
     console.log(tx);
     return;
   }
-  const wait = 0;
+  const wait = options.wait;
 
   console.log("Waiting for " + wait + " minutes before relaying the message");
   setTimeout(async () => {
     const results = await relay(
-      "devnet-verifiers",
-      "ethereum-sepolia",
+      network,
+      chainName,
       transactionHash,
       0,
       "avalanche",
@@ -58,7 +59,7 @@ export async function testFinality() {
     );
     const pollId = getPollFromRelay(results);
     console.log(
-      `See the poll here: https://devnet-verifiers.axelarscan.io/vm-poll/${config.axelar.contracts.VotingVerifier[chainName].address}_${pollId}`
+      `See the poll here: https://${network}.axelarscan.io/vm-poll/${config.axelar.contracts.VotingVerifier[chainName].address}_${pollId}`
     );
   }, wait * 60 * 1000);
 }
