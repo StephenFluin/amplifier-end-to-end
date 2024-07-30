@@ -8,7 +8,7 @@ import { Command } from "commander";
 import { getConfig } from "./configs/amplifier-deployments";
 import { testFinality } from "./test-finality";
 import { testVerifiers } from "./test-verifiers";
-import { testRotation } from "./test-rotation";
+import { getVerifierSet, testRotation } from "./test-rotation";
 export type Network = "devnet-amplifier" | "devnet-verifiers";
 
 const program = new Command();
@@ -104,7 +104,15 @@ program
   .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
   .option("-m, --multisig-session-id <id>", "multisig session id")
   .option("-i, --message-id <id>", "message id")
+  .option("-p, --privileged", "assume privileged user")
   .action(testRotation);
+program
+  .command("get-verifier-set")
+  .description("Get a verifier set from a chain's prover")
+  .option("-c, --chain <chain>", "target chain", "avalanche")
+  .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
+  .option("-s, --set-type <type>", "current or next", "current")
+  .action(getVerifierSet);
 
 program.parse(process.argv);
 
