@@ -28,9 +28,34 @@ export async function testRotation(options: any) {
           { allowErrors: true }
         );
         console.log("result was", result);
-        // TODO NOW AUTOMATICALLY GET THE MULTISIG SESSION AND DO IT
+        // Find the number in {"key":"session_id","value":"3463"} with regular expressions
+        const sessionId = result.match(/"session_id","value":"(\d+)"/)![1];
+        console.log(`SessionId is ${sessionId}`);
+        if (sessionId) {
+          options.multisigSessionId = sessionId;
+          console.log(
+            "Waiting ",
+            FINALITIES[chain],
+            `s for signing on axelar.`
+          );
+          setTimeout(() => {
+            testRotation(options);
+          }, FINALITIES[chain] * 1000);
+        }
       } catch (error: any) {
-        console.error("Likely verifier set hasn't changed", error.stderr);
+        // Check if error.stderr contains "verifier set has not changed sufficiently"
+        if (
+          error.stderr.includes("verifier set has not changed sufficiently")
+        ) {
+          console.log(
+            "Can't rotate signers, need a bigger change to the verifier set."
+          );
+          process.exit(1);
+        }
+        console.error(
+          "Unknown error running `update_verifier_set`",
+          error.stderr
+        );
       }
     } else {
       console.log("Run with authorized user:\n", cmd);
@@ -63,7 +88,7 @@ export async function testRotation(options: any) {
     console.log("Waiting ", FINALITIES[chain], `s for finality on ${chain}`);
     console.log("manually invoke with:");
     console.log(
-      "./ae2e test-rotation -c ${chain} -n ${network} --messageId ${tx}-0"
+      `./ae2e test-rotation -c ${chain} -n ${network} --messageId ${tx}-0`
     );
   }
   if (options.messageId) {

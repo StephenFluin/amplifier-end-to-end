@@ -71,6 +71,14 @@ program
 
 program
   .command("test-verifiers")
+  .option("-c, --chain <chain>", "target chain", "avalanche")
+  .option("-n, --network <network>", "network to deploy to", "devnet-verifiers")
+  .option("-r, --relay <relay>", "should we relay it for you?", true)
+  .option(
+    "-d, --destination-chain <chain>",
+    "destination chain",
+    "ethereum-sepolia"
+  )
   .description(
     "Run a test transaction from Fiji->Sepolia and report on successful verifiers"
   )
@@ -106,6 +114,7 @@ program
   .option("-i, --message-id <id>", "message id")
   .option("-p, --privileged", "assume privileged user")
   .action(testRotation);
+
 program
   .command("get-verifier-set")
   .description("Get a verifier set from a chain's prover")

@@ -1,23 +1,48 @@
 import pc from "picocolors";
-import { getTxHashFromCast, run } from "./helpers";
+import { getTxHashFromCast, relay, run } from "./helpers";
 import { KNOWN_VERIFIERS } from "./known-verifiers";
+import { getConfig } from "./configs/amplifier-deployments";
 
 /**
  * Run a transaction and see which verifiers vote on it
  */
-export function testVerifiers() {
+export async function testVerifiers(options: any) {
   const limit = 30;
   // Wait in seconds
   const wait = 30;
 
+  const chain = "avalanche";
+
+  const config = await getConfig(options.network);
+
   const tx = run(
-    `cast send 0x8a2DB90356402a00dbfFeeF2629F590B4929Df5F \
+    `cast send ${config.chains[options.chain].contracts.AxelarGateway.address} \
     "callContract(string, string, bytes)" \
-    "ethereum-sepolia" "0x8f8dedd09E23E22E1555e9D2C25D7c7332291919" 00 \
-     --rpc-url https://api.avax-test.network/ext/bc/C/rpc --mnemonic-path ./private.mneumonic`,
-    "send a message from fuji to sepolia via devnet-verifiers gateway"
+    "${
+      options.destinationChain
+    }" "0x8f8dedd09E23E22E1555e9D2C25D7c7332291919" 00 \
+     --rpc-url ${
+       config.chains[options.chain].rpc
+     } --mnemonic-path ./private.mneumonic`,
+    `send a message from ${options.chain} to ${options.destinationChain} via ${options.network} gateway`
   );
-  console.log("Message sent on Fuji. Tx:", pc.green(getTxHashFromCast(tx)));
+  const txHash = getTxHashFromCast(tx);
+  console.log(`Message sent on ${options.chain}. Tx:`, pc.green(txHash));
+
+  if (options.relay) {
+    console.log("Relaying message now.");
+
+    relay(
+      options.network,
+      options.chain,
+      txHash,
+      0,
+      options.destinationChain,
+      "0x8f8dedd09E23E22E1555e9D2C25D7c7332291919",
+      "0x3E77Fd1B4d4176CA9d54dB60f132FbB88BFA43CA",
+      "bc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a"
+    );
+  }
 
   // Now query Axelar after 30 seconds, looking for every vote on Fuji voting verifier
   setTimeout(() => {

@@ -40,4 +40,6 @@ export const KNOWN_VERIFIERS: { [key: string]: string } = {
   axelar19dlv7fafynh3wahee00zapurht7r39ef2yxx0e: "Inter Blockchain Services",
   axelar1vxlhfe7v3zs5q3rlv3tk5ptem5vk3k8ng59jjc: "AutoStake.com",
   axelar1kd5zk9ces4hmrg7kjgda6n5gpzysnr3cgdagrd: "Redbooker",
+  axelar1hyd28hfrws97gcqzcmz74zrkm3q000u9qarz4z: "Stephen Fluin 2",
+  axelar1xla3yq8rsfsesvfcjrmzhxzskseltws4tkfjms: "Stephen Fluin",
 };
