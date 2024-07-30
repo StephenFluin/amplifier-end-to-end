@@ -20,14 +20,13 @@ export async function testRotation(options: any) {
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
     --chain-id=${network}`;
     if (options.privileged) {
-      console.log("running\n", cmd, "as priviledged user");
+      console.log("running\n", cmd, "as privileged user");
       try {
         const result = run(
           `kubectl exec -it genesis-0 -c core -n devnet-verifiers -- ${cmd}`,
           "run update_verifier_set as privileged user",
           { allowErrors: true }
         );
-        console.log("result was", result);
         // Find the number in {"key":"session_id","value":"3463"} with regular expressions
         const sessionId = result.match(/"session_id","value":"(\d+)"/)![1];
         console.log(`SessionId is ${sessionId}`);
@@ -78,8 +77,10 @@ export async function testRotation(options: any) {
        --rpc-url ${config.chains[chain].rpc} --mnemonic-path ./private.mneumonic`,
       "submit the signer rotation transaction on external chain"
     );
-    console.log(result);
     const tx = getTxHashFromCast(result);
+    if (!tx) {
+      console.log("Couldn't get Tx from rotation results", result);
+    }
     console.log("Successfully rotated signers at destination chain. Tx:", tx);
     setTimeout(() => {
       options.messageId = tx + "-0";
@@ -88,7 +89,7 @@ export async function testRotation(options: any) {
     console.log("Waiting ", FINALITIES[chain], `s for finality on ${chain}`);
     console.log("manually invoke with:");
     console.log(
-      `./ae2e test-rotation -c ${chain} -n ${network} --messageId ${tx}-0`
+      `./ae2e test-rotation -c ${chain} -n ${network} --message-id ${tx}-0`
     );
   }
   if (options.messageId) {
@@ -127,7 +128,7 @@ export async function testRotation(options: any) {
         "confirm verifier set"
       );
     }, FINALITIES.axelar * 1000);
-    console.log("Waiting ", FINALITIES.axelar, `s for finality on axelar`);
+    console.log("Waiting ", FINALITIES.axelar, `s for votes on axelar`);
     console.log("Going to confirm the verifier set.");
   }
 }
