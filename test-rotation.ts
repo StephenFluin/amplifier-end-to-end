@@ -18,14 +18,20 @@ export async function testRotation(options: any) {
    '"update_verifier_set"' \
     --from amplifier  \
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
-    --chain-id=${network}'
-  `;
+    --chain-id=${network}`;
     if (options.privileged) {
       console.log("running\n", cmd, "as priviledged user");
-      run(
-        `../${network}.sh "${cmd.replace(/"/g, '\\"')}"`,
-        "run update_verifier_set as priviledged user"
-      );
+      try {
+        const result = run(
+          `kubectl exec -it genesis-0 -c core -n devnet-verifiers -- ${cmd}`,
+          "run update_verifier_set as privileged user",
+          { allowErrors: true }
+        );
+        console.log("result was", result);
+        // TODO NOW AUTOMATICALLY GET THE MULTISIG SESSION AND DO IT
+      } catch (error: any) {
+        console.error("Likely verifier set hasn't changed", error.stderr);
+      }
     } else {
       console.log("Run with authorized user:\n", cmd);
     }
@@ -93,8 +99,7 @@ export async function testRotation(options: any) {
       '"confirm_verifier_set"' \
       --keyring-backend test --from wallet --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice}  \
       --chain-id=${network}      --node ${config.axelar.rpc}`,
-        "confirm verifier set",
-        true
+        "confirm verifier set"
       );
     }, FINALITIES.axelar * 1000);
     console.log("Waiting ", FINALITIES.axelar, `s for finality on axelar`);
