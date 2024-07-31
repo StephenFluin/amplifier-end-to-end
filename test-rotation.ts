@@ -34,12 +34,12 @@ export async function testRotation(options: any) {
           options.multisigSessionId = sessionId;
           console.log(
             "Waiting ",
-            FINALITIES[chain],
+            FINALITIES["axelar"],
             `s for signing on axelar.`
           );
           setTimeout(() => {
             testRotation(options);
-          }, FINALITIES[chain] * 1000);
+          }, FINALITIES["axelar"] * 1000);
         }
       } catch (error: any) {
         // Check if error.stderr contains "verifier set has not changed sufficiently"
