@@ -37,17 +37,17 @@ export async function deployGatewayOnSepolia(): Promise<string | undefined> {
     const { stdout, stderr } = await execAsync(
       `cd axelar-contract-deployments && node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`
     );
-    const gatewayImplementationRegex = /Gateway Implementation:\s+(\S+)/;
-    const match = stdout.match(gatewayImplementationRegex);
+    const gatewayProxyRegex = /Gateway Proxy:\s+(\S+)/;
+    const match = stdout.match(gatewayProxyRegex);
     if (match) {
-      const gatewayImplementationAddress = match[1];
+      const gatewayProxyRegex = match[1];
       console.log(
-        "Src gateway deployed on sepolia at address:",
-        gatewayImplementationAddress
+        "(ignore)Src gateway deployed on sepolia at address:",
+        gatewayProxyRegex
       );
-      return gatewayImplementationAddress;
+      return gatewayProxyRegex;
     } else {
-      console.error("Gateway Implementation Address not found");
+      console.error("Gateway Proxy Address not found");
     }
     if (stderr) console.error("Deployment Errors:", stderr);
   } else {
