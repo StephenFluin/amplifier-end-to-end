@@ -93,9 +93,9 @@ program
     "avalanche"
   )
   .option(
-    "-w, --wait <minutes>",
-    "how long to wait before relaying the message",
-    "0"
+    "-w, --wait <seconds>",
+    "how long to wait before relaying the message (-1 = auto)",
+    "-1"
   )
   .option("-n, --network <network>", "network used", "devnet-verifiers")
   .description(

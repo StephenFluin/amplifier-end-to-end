@@ -1,5 +1,5 @@
 import pc from "picocolors";
-import { getTxHashFromCast, relay, run } from "./helpers";
+import { getTxHashFromCast, verifyMessages, run } from "./helpers";
 import { KNOWN_VERIFIERS } from "./known-verifiers";
 import { getConfig } from "./configs/amplifier-deployments";
 
@@ -32,7 +32,7 @@ export async function testVerifiers(options: any) {
   if (options.relay) {
     console.log("Relaying message now.");
 
-    relay(
+    verifyMessages(
       options.network,
       options.chain,
       txHash,
@@ -60,8 +60,9 @@ export async function testVerifiers(options: any) {
     const results: any[] = [];
     results.push(...fetchPage(Math.ceil(count / limit)));
     results.push(...fetchPage(Math.ceil(count / limit) - 1));
+    let i = 1;
     for (let verifier of sortByFirstItem(results)) {
-      console.log(`${verifier[0]} (block ${verifier[2]})`);
+      console.log(`${i++}\t${verifier[0]} (block ${verifier[2]})`);
     }
     if (results.length === 0) {
       console.error(pc.red("No votes found, problem with relayer?"));

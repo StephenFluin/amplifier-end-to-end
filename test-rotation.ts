@@ -1,5 +1,10 @@
 import { FINALITIES, getConfig } from "./configs/amplifier-deployments";
-import { getTxHashFromCast, run } from "./helpers";
+import {
+  getProofExecuteData,
+  getSessionIdFromCommand,
+  getTxHashFromCast,
+  run,
+} from "./helpers";
 
 export async function testRotation(options: any) {
   const chain = options.chain;
@@ -18,7 +23,7 @@ export async function testRotation(options: any) {
    '"update_verifier_set"' \
     --from amplifier  \
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
-    --chain-id=${network}`;
+    --chain-id=${config.axelar.chainId}`;
     if (options.privileged) {
       console.log("running\n", cmd, "as privileged user");
       try {
@@ -27,8 +32,8 @@ export async function testRotation(options: any) {
           "run update_verifier_set as privileged user",
           { allowErrors: true }
         );
-        // Find the number in {"key":"session_id","value":"3463"} with regular expressions
-        const sessionId = result.match(/"session_id","value":"(\d+)"/)![1];
+        const sessionId = getSessionIdFromCommand(result);
+
         console.log(`SessionId is ${sessionId}`);
         if (sessionId) {
           options.multisigSessionId = sessionId;
@@ -62,14 +67,12 @@ export async function testRotation(options: any) {
   } else if (options.multisigSessionId && !options.messageId) {
     // eg 2974
     console.log("We already have a session, investigating...");
-    const proofData = run(
-      `axelard q wasm contract-state smart ${prover} \
-       '{"get_proof":{"multisig_session_id":"${options.multisigSessionId}"}}' \
-        --node ${config.axelar.rpc}`,
-      "get proof"
-    );
 
-    const hexData = proofData.match(/execute_data: (.*)/)![1];
+    const hexData = getProofExecuteData(
+      prover,
+      options.multisigSessionId,
+      config.axelar.rpc
+    );
     console.log("hex to execute is", hexData.length, "long");
     // Submit on external ethereum-sepolia devnet-verifiers gateway
     const result = run(
@@ -115,18 +118,28 @@ export async function testRotation(options: any) {
       --keyring-backend test --from wallet --gas auto --gas-adjustment 1.5 --gas-prices ${
         config.axelar.gasPrice
       } \
-      --chain-id=${network}      --node ${config.axelar.rpc}`,
+      --chain-id=${config.axelar.chainId}      --node ${config.axelar.rpc}`,
       "verify verifier set"
     );
 
     setTimeout(() => {
-      run(
-        `axelard tx wasm execute ${config.axelar.contracts.MultisigProver[chain].address} \
+      const cmd = `axelard tx wasm execute ${config.axelar.contracts.MultisigProver[chain].address} \
       '"confirm_verifier_set"' \
       --keyring-backend test --from wallet --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice}  \
-      --chain-id=${network}      --node ${config.axelar.rpc}`,
-        "confirm verifier set"
-      );
+      --chain-id=${config.axelar.chainId}      --node ${config.axelar.rpc}`;
+      console.log("running", cmd);
+      const output = run(cmd, "confirm verifier set");
+
+      if (output.includes("failed")) {
+        console.log(
+          "Failed to confirm verifier set! You'll need to re-run the verification step before anything will work."
+        );
+        console.log(
+          `./ae2e test-rotation -c ${chain} -n ${network} --message-id ${options.messageId}`
+        );
+        console.log(output);
+        process.exit(1);
+      }
     }, FINALITIES.axelar * 1000);
     console.log("Waiting ", FINALITIES.axelar, `s for votes on axelar`);
     console.log("Going to confirm the verifier set.");

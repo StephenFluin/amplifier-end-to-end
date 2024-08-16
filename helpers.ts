@@ -5,15 +5,15 @@ import { getConfig } from "./configs/amplifier-deployments";
 
 const ampd_paths = {
   linux:
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-linux-amd64-v0.6.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v1.0.0/ampd-linux-amd64-v1.0.0",
   "darwin-amd64":
-    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v0.6.0/ampd-darwin-amd64-v0.6.0",
+    "https://github.com/axelarnetwork/axelar-amplifier/releases/download/ampd-v1.0.0/ampd-darwin-amd64-v1.0.0",
 };
 const axelard_paths = {
   linux:
-    "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-linux-amd64-v0.35.6",
+    "https://github.com/axelarnetwork/axelar-core/releases/download/v1.0.1/axelard-linux-amd64-v1.0.1",
   "darwin-amd64":
-    "https://github.com/axelarnetwork/axelar-core/releases/download/v0.35.6/axelard-darwin-amd64-v0.35.6",
+    "https://github.com/axelarnetwork/axelar-core/releases/download/v1.0.1/axelard-darwin-amd64-v1.0.1",
 };
 
 /**
@@ -146,20 +146,55 @@ export function getTxHashFromCast(output: string): string {
     "Unknown Tx Hash",
   ])[1];
 }
+
+export function getSessionIdFromCommand(output: string): string {
+  // Find the number in {"key":"session_id","value":"3463"} with regular expressions
+  const sessionId = output.match(/"session_id","value":"(\d+)"/)![1];
+  return sessionId;
+}
+
+export function getProofExecuteData(
+  prover: string,
+  multisigSessionId: string,
+  rpc: string
+): string {
+  const proofData = run(
+    `axelard q wasm contract-state smart ${prover} \
+     '{"proof":{"multisig_session_id":"${multisigSessionId}"}}' \
+      --node ${rpc}`,
+    "get proof"
+  );
+  const hexData = proofData.match(/execute_data: (.*)/)![1];
+  console.log("hex to execute is", hexData.length, "long");
+  return hexData;
+}
 /**
  * Take in an axelar verifyMessages transaction and return poll and contract.
  */
-export function getPollFromRelay(output: string): string {
-  const event = JSON.parse(output).logs[0].events.find(
-    (event: any) => event.type === "wasm-messages_poll_started"
-  );
+export function getPollFromVerifyMessages(output: string): string {
+  let event;
+  try {
+    event = JSON.parse(output).logs[0].events.find(
+      (event: any) => event.type === "wasm-messages_poll_started"
+    );
+  } catch (error: any) {
+    console.log("error getting poll from verify messages", error, output);
+    return "";
+  }
   const pollId = event.attributes
     .find((attribute: any) => attribute.key === "poll_id")
     .value.replace(/"/g, "");
   return pollId;
 }
 
-export async function relay(
+export function getVersionFromNetwork(network: string): string {
+  if (network === "testnet") {
+    return "1.0";
+  }
+  return "0.6";
+}
+
+export async function verifyMessages(
   network: string = "devnet-verifiers",
   sourceChain: string,
   transactionHash: string,
@@ -171,11 +206,16 @@ export async function relay(
 ) {
   const config = await getConfig(network);
 
-  const cmd = `bin/axelard tx wasm execute ${config.axelar.contracts.Gateway[sourceChain].address} \
+  const version = getVersionFromNetwork(network);
+  const cmd = `bin/axelard tx wasm execute ${
+    config.axelar.contracts.Gateway[sourceChain].address
+  } \
   '{"verify_messages":
       [{"cc_id":{
-        "chain":"${sourceChain}",
-        "id":"${transactionHash}-${transactionIndex}"},
+        "${version === "1.0" ? "source_" : ""}chain":"${sourceChain}",
+        "${
+          version === "1.0" ? "message_" : ""
+        }id":"${transactionHash}-${transactionIndex}"},
         "destination_chain":"${destinationChain}",
         "destination_address":"${destinationAddress}",
         "source_address":"${sourceAddress}",
@@ -185,7 +225,12 @@ export async function relay(
   --from wallet \
   --gas auto --gas-adjustment 1.5 \
   --gas-prices ${config.axelar.gasPrice} \
-  --chain-id=${network} \
+  --chain-id=${config.axelar.chainId} \
   --node ${config.axelar.rpc}`;
+  console.log("running cmd:", cmd);
   return run(cmd, "relay the message to the Axelar network");
+}
+
+export async function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }

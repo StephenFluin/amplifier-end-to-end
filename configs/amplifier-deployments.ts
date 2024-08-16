@@ -15,8 +15,10 @@ export async function getConfig(network: string) {
 }
 /** Chain finalities in seconds */
 export const FINALITIES: { [key: string]: number } = {
-  axelar: 20,
-  "ethereum-sepolia": 15 * 60,
+  axelar: 20, // Not really finality, time for poll completion
+  "ethereum-sepolia": 17 * 60,
+  "test-sepolia": 17 * 60,
   avalanche: 35,
-  "op-sepolia": 30 * 60,
+  "test-avalanche": 35,
+  "op-sepolia": 32 * 60,
 };

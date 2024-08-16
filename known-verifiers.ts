@@ -42,4 +42,7 @@ export const KNOWN_VERIFIERS: { [key: string]: string } = {
   axelar1kd5zk9ces4hmrg7kjgda6n5gpzysnr3cgdagrd: "Redbooker",
   axelar1hyd28hfrws97gcqzcmz74zrkm3q000u9qarz4z: "Stephen Fluin 2",
   axelar1xla3yq8rsfsesvfcjrmzhxzskseltws4tkfjms: "Stephen Fluin",
+  axelar1279g29s9hfe4xqg43vef9xakg5r4ct6jm2e2fr: "AlexZ",
+  axelar1wn3v4u9cewtknwefqshqzz25u8xezdv4v5pjre: "0base.vc",
+  axelar1tpnda6qwacupzh5vt6ph34ttsgt2s7sthwk3fu: "Cosmostation",
 };
