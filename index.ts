@@ -98,6 +98,7 @@ program
     "-1"
   )
   .option("-n, --network <network>", "network used", "devnet-verifiers")
+  .option("-r, --relay <relay>", "should we relay it for you?", true)
   .description(
     "Run a test transaction from Sepolia->Fiji and try to relay and have verifiers vote before finality"
   )

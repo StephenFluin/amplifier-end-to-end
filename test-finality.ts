@@ -30,6 +30,15 @@ export async function testFinality(options: any) {
     options.wait = FINALITIES[chainName];
   }
 
+  let relay;
+  if (options.relay && options.relay !== "false") {
+    console.log("Will relay messages.");
+    relay = true;
+  } else {
+    console.log("Will not relay messages.");
+    relay = false;
+  }
+
   await downloadAxelard();
   // Ethereum sepolia gateway for devnet-verifiers
   const tx = run(
@@ -47,7 +56,7 @@ export async function testFinality(options: any) {
     console.log(
       `TransactionHash of ${chainName}->${destinationChainName} via ${pc.green(
         network
-      )}:${pc.green(transactionHash)}`
+      )}: ${pc.green(transactionHash)}`
     );
   } else {
     console.log("failure!");
@@ -55,6 +64,11 @@ export async function testFinality(options: any) {
     return;
   }
   const wait = options.wait;
+
+  if (!relay) {
+    console.log("Not relaying the message, all done.");
+    return;
+  }
 
   console.log("Waiting for " + wait + " seconds before relaying the message");
   await sleep(wait * 1000);
