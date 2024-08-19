@@ -2,6 +2,7 @@ import * as fs from "fs";
 import * as os from "os";
 import { execSync } from "child_process";
 import { getConfig } from "./configs/amplifier-deployments";
+import ProgressBar from "progress";
 
 const ampd_paths = {
   linux:
@@ -232,5 +233,20 @@ export async function verifyMessages(
 }
 
 export async function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  if (!ms && ms !== 0) {
+    console.log("invalid wait provided!");
+    return;
+  }
+  return new Promise((resolve) => {
+    const bar = new ProgressBar("Waiting [:bar] :percent :etas", {
+      total: ms / 100,
+    });
+    const timer = setInterval(() => {
+      bar.tick();
+      if (bar.complete) {
+        clearInterval(timer);
+        resolve(true);
+      }
+    }, 100);
+  });
 }

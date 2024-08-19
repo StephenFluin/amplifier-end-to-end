@@ -70,4 +70,5 @@ export const KNOWN_VERIFIERS: { [key: string]: string } = {
   axelar16rfnanrns0u2cxm06ugvxej438y0gktzv9hwcl: "Squid ",
   axelar1j3u6kd4027wln9vnvmg449hmc3xj2m2g5uh69q: "Stakin",
   axelar1wue2mm6xqk52wpynuqjlzwwux4kp3dkva5dpzw: "WhisperNode",
+  axelar16dxsfhyegy40e4eqfxee5jw5gyy2xxtcw4t2na: "Bokoblinet",
 };

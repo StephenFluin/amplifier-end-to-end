@@ -148,7 +148,7 @@ export async function testFinality(options: any) {
       "construct proof"
     );
     console.log(`now wait ${FINALITIES.axelar}s for signing`);
-    await sleep(FINALITIES.axlear * 1000);
+    await sleep(FINALITIES.axelar * 1000);
     const executeData = await getProofExecuteData(
       config.axelar.contracts.MultisigProver[destinationChainName].address,
       "1234",
