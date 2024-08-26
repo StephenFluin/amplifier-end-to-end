@@ -252,7 +252,7 @@ export async function newVerifier(options: any) {
   console.log("Finished setting up verifier");
   console.log("Now fill out the form here:");
   console.log(
-    "https://docs.google.com/forms/d/e/1FAIpQLSfQQhk292yT9j8sJF5ARRIE8PpI3LjuFc8rr7xZW7posSLtJA/viewform"
-  );
+    'https://docs.google.com/forms/d/e/1FAIpQLSfQQhk292yT9j8sJF5ARRIE8PpI3LjuFc8rr7xZW7posSLtJA/viewform'
+  )
   // TODO remove this exit by clean up tofnd dangling
 }
