@@ -15,8 +15,11 @@ import pc from "picocolors";
  */
 export async function instantiateContracts(
   srcGatewayAddress: string,
-  chainName: string
+  options: any
 ): Promise<[string, string, string]> {
+  const chainName = options.chainName;
+  const config = await getConfig(options.network);
+
   compileContracts();
   const [verifierCodeId, gatewayCodeId, proverCodeId] = deployContracts();
 
@@ -42,43 +45,50 @@ export async function instantiateContracts(
     address
   );
   const [verifierAddress, verifierCreation] = instantiate(
+    options,
     "verifier",
     verifierCodeId,
     `{
     "governance_address": "axelar1zlr7e5qf3sz7yf890rkh9tcnu87234k6k7ytd9",
-    "service_registry_address":"axelar1c9fkszt5lq34vvvlat3fxj6yv7ejtqapz04e97vtc9m5z9cwnamq8zjlhz",
+    "service_registry_address":"${config.axelar.contracts.ServiceRegistry.address}",
     "service_name":"validators",
     "source_gateway_address":"${sourceChainGatewayAddress}",
     "voting_threshold":["1","1"],
-    "block_expiry":10,
+    "block_expiry":"10",
     "confirmation_height":1,
-    "source_chain":"test",
-    "rewards_address":"axelar1vaj9sfzc3z0gpel90wu4ljutncutv0wuhvvwfsh30rqxq422z89qnd989l",
-    "msg_id_format":"hex_tx_hash_and_event_index"
+    "source_chain":"${chainName}",
+    "rewards_address":"${config.axelar.contracts.Rewards.address}",
+    "msg_id_format":"hex_tx_hash_and_event_index",
+    "address_format": "eip55"
 }`,
     { address: address }
   );
-
   const [gatewayAddress, gatewayCreation] = instantiate(
+    options,
     "gateway",
     gatewayCodeId,
     `{
     "verifier_address": "${verifierAddress}",
-    "router_address": "axelar14jjdxqhuxk803e9pq64w4fgf385y86xxhkpzswe9crmu6vxycezst0zq8y"
+    "router_address": "${config.axelar.contracts.Router.address}"
 }`,
     { address: address }
   );
 
   const [proverAddress, proverCreation] = instantiate(
+    options,
     "prover",
     proverCodeId,
     `{
       "admin_address": "${address}",
-      "governance_address": "axelar1zlr7e5qf3sz7yf890rkh9tcnu87234k6k7ytd9",
+      "governance_address": "${
+        config.axelar.contracts.Multisig.governanceAddress
+      }",
       "gateway_address": "${gatewayAddress}",
-      "multisig_address": "axelar19jxy26z0qnnspa45y5nru0l5rmy9d637z5km2ndjxthfxf5qaswst9290r",
-      "coordinator_address":"axelar1m2498n4h2tskcsmssjnzswl5e6eflmqnh487ds47yxyu6y5h4zuqr9zk4g",
-      "service_registry_address":"axelar1c9fkszt5lq34vvvlat3fxj6yv7ejtqapz04e97vtc9m5z9cwnamq8zjlhz",
+      "multisig_address": "${config.axelar.contracts.Multisig.address}",
+      "coordinator_address":"${config.axelar.contracts.Coordinator.address}",
+      "service_registry_address":"${
+        config.axelar.contracts.ServiceRegistry.address
+      }",
       "voting_verifier_address": "${verifierAddress}",
       "signing_threshold": ["1","1"],
       "service_name": "validators",
@@ -99,6 +109,7 @@ export async function instantiateContracts(
 }
 
 function instantiate(
+  options: any,
   contract: string,
   codeId: string,
   paramBlock: string,
@@ -145,7 +156,7 @@ function compileContracts() {
   run(
     `cd axelar-amplifier;
     git fetch;
-    git -c advice.detachedHead=false checkout ampd-v0.6.0`,
+    git -c advice.detachedHead=false checkout ampd-v1.0.0`,
     "checkout ampd"
   );
   if (

@@ -45,9 +45,16 @@ export async function testVerifiers(options: any) {
   );
 
   // regular expression to get the poll id from "\"poll_id\",\"value\":\"\\\"1396"
-  const pollId = verificationPoll.match(
-    /\"poll_id\",\"value\":\"\\\"(\d+)/
-  )![1];
+  let pollId;
+  try {
+    pollId = verificationPoll.match(/\"poll_id\",\"value\":\"\\\"(\d+)/)![1];
+  } catch (e) {
+    console.error(
+      "Couldn't get poll id from verification poll",
+      verificationPoll
+    );
+    process.exit(1);
+  }
   console.log("Poll id is", pollId);
 
   // Now query Axelar after votes (give them 4x normal time)
@@ -59,9 +66,13 @@ export async function testVerifiers(options: any) {
     } '{"poll":{"poll_id":"${pollId}"}}' -o json --node ${config.axelar.rpc}`,
     "get poll votes"
   );
+  console.log("Raw voter data is", voterData);
   const votes = JSON.parse(voterData).data.poll.participation;
   const voters = Object.keys(votes).map(
-    (voter: string) => KNOWN_VERIFIERS[voter] || "Unknown / Internal"
+    (voter: string) =>
+      (KNOWN_VERIFIERS[voter] || "Unknown / Internal") +
+      ` (${voter})` +
+      (votes[voter].voted ? " voted" : " DID NOT VOTE")
   );
   // sort voters alphabetically
   voters.sort();

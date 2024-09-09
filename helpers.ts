@@ -250,3 +250,13 @@ export async function sleep(ms: number) {
     }, 100);
   });
 }
+
+export async function endPoll(options: any) {
+  const config = await getConfig(options.network);
+  const cmd = `axelard tx wasm execute ${options.contract} \
+  '{"end_poll":{"poll_id":"${options.poll}"}}' \
+  --from wallet --keyring-backend test --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
+  --node ${config.axelar.rpc}`;
+  console.log("running", cmd);
+  run(cmd, "end the poll");
+}

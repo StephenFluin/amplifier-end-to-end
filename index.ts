@@ -1,7 +1,7 @@
 import * as verifier from "./verifier";
 import * as source from "./source";
 import * as axelar from "./axelar";
-import { run } from "./helpers";
+import { endPoll, run } from "./helpers";
 import { downloadAmpd, downloadAxelard } from "./helpers";
 
 import { Command } from "commander";
@@ -124,6 +124,19 @@ program
   .option("-s, --set-type <type>", "current or next", "current")
   .action(getVerifierSet);
 
+program
+  .command("end-poll")
+  .description("End a poll on a verifier and track contributions")
+  .option("-c, --chain <chain>", "chain", "avalanche")
+  .option("-n, --network <network>", "network to use", "testnet")
+  .option("-p, --poll <poll>", "poll number", "1414")
+  .option(
+    "-w, --contract <contract>",
+    "contract address",
+    "axelar1hupk5du59cgu4ps5s637rhakwsq0060ycdp57j2ccevna7wqqzrqnfrr0p"
+  )
+  .action((options) => endPoll(options));
+
 program.parse(process.argv);
 
 export async function newIntegration(options: any) {
@@ -151,7 +164,7 @@ export async function newIntegration(options: any) {
   await downloadAxelard();
   const [verifier, gateway, prover] = await axelar.instantiateContracts(
     externalGateway,
-    options.chainName
+    options
   );
 
   await printIntegratorApprovalSteps(
