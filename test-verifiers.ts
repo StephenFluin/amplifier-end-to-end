@@ -78,6 +78,21 @@ export async function testVerifiers(options: any) {
   voters.sort();
   console.log("Voters are", voters);
 
+  // Clean up and make sure verifiers are rewarded
+  const closePoll = run(
+    `axelard tx wasm execute ${
+      config.axelar.contracts.VotingVerifier[options.chain].address
+    } \
+    '{"close_poll":{"poll_id":"${pollId}"}}' \
+    --keyring-backend test \
+    --from wallet \
+    --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
+    --node ${config.axelar.rpc} \
+    --chain-id ${config.axelar.chainId}`,
+    "close poll"
+  );
+  console.log(`Poll ${pollId} closed. Tx Results:`, pc.green(closePoll));
+
   // Post report into Discord
 }
 function sortByFirstItem(arrayOfArrays: [string, string, string, string][]) {
