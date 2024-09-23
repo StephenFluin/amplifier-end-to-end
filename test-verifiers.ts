@@ -83,7 +83,7 @@ export async function testVerifiers(options: any) {
     `axelard tx wasm execute ${
       config.axelar.contracts.VotingVerifier[options.chain].address
     } \
-    '{"close_poll":{"poll_id":"${pollId}"}}' \
+    '{"end_poll":{"poll_id":"${pollId}"}}' \
     --keyring-backend test \
     --from wallet \
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
