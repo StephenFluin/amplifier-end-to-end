@@ -21,17 +21,16 @@ export async function testRotation(options: any) {
   if (!options.multisigSessionId && !options.messageId) {
     const cmd = `axelard tx wasm execute ${prover} \
    '"update_verifier_set"' \
-    --from amplifier  \
+    --from testnet-admin --keyring-backend test \
     --gas auto --gas-adjustment 1.5 --gas-prices ${config.axelar.gasPrice} \
-    --chain-id=${config.axelar.chainId}`;
+    --chain-id=${config.axelar.chainId} \
+    --node ${config.axelar.rpc}`;
     if (options.privileged) {
       console.log("running\n", cmd, "as privileged user");
       try {
-        const result = run(
-          `kubectl exec -it genesis-0 -c core -n devnet-verifiers -- ${cmd}`,
-          "run update_verifier_set as privileged user",
-          { allowErrors: true }
-        );
+        const result = run(cmd, "run update_verifier_set as privileged user", {
+          allowErrors: true,
+        });
         const sessionId = getSessionIdFromCommand(result);
 
         console.log(`SessionId is ${sessionId}`);
