@@ -12,25 +12,22 @@ const execAsync = promisify(exec);
 /**
  * Get the EVM gateway deployer
  */
+//setup gateway deployment
 export async function setupGatewayDeployer() {
-  if (!existsSync("axelar-contract-deployments")) {
-    run(
-      "git clone https://github.com/axelarnetwork/axelar-contract-deployments",
-      "clone repo"
-    );
-  }
-  run(
-    `cd axelar-contract-deployments;git checkout 019d41f81b506d35fa89ffd9ebb3a02719563e09;npm i`,
-    "install dependencies"
-  );
-  console.log(
-    "Deployer cloned in your ./axelar-contract-deployments directory"
-  );
-  console.log(
-    "Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments"
-  );
-}
+  const clearFlag = process.argv.indexOf('--clear') === -1 ? false : true
+  if (clearFlag)
+    run('rm -rf axelar-contract-deployments', 'remove and replace old repo')
 
+  if (!existsSync('axelar-contract-deployments')) {
+    run(
+      'git clone https://github.com/axelarnetwork/axelar-contract-deployments',
+      'clone repo'
+    )
+    run(`cd axelar-contract-deployments;npm i`, 'install dependencies')
+  }
+  console.log('Deployer cloned in your ./axelar-contract-deployments directory')
+  console.log('Please add a testnet private key to deploy your external gateway with in the .env file in ./axelar-contract-deployments')
+}
 /**
  * Use the EVM gateway deployer to deploy a new gateway
  */
@@ -40,17 +37,17 @@ export async function deployGatewayOnSepolia(): Promise<string | undefined> {
     const { stdout, stderr } = await execAsync(
       `cd axelar-contract-deployments && node evm/deploy-amplifier-gateway.js --env devnet-amplifier --minimumRotationDelay 300 -n ethereum-sepolia --domainSeparator "0x5034999c74b28c4db74dca67073b78629cc0ff7bf005f2f79cd8caf7d9588406"`
     );
-    const gatewayImplementationRegex = /Gateway Implementation:\s+(\S+)/;
-    const match = stdout.match(gatewayImplementationRegex);
+    const gatewayProxyRegex = /Gateway Proxy:\s+(\S+)/;
+    const match = stdout.match(gatewayProxyRegex);
     if (match) {
-      const gatewayImplementationAddress = match[1];
+      const gatewayProxyRegex = match[1];
       console.log(
-        "Src gateway deployed on sepolia at address:",
-        gatewayImplementationAddress
+        "(ignore)Src gateway deployed on sepolia at address:",
+        gatewayProxyRegex
       );
-      return gatewayImplementationAddress;
+      return gatewayProxyRegex;
     } else {
-      console.error("Gateway Implementation Address not found");
+      console.error("Gateway Proxy Address not found");
     }
     if (stderr) console.error("Deployment Errors:", stderr);
   } else {

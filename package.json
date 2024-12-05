@@ -9,7 +9,7 @@
     "integrator": "ts-node index.ts integrator",
     "tx": "ts-node index.ts tx",
     "verify": "ts-node index.ts verify",
-    "setup-deployment": "ts-node index.ts setupDeployment"
+    "setup-deployment": "ts-node index.ts setupGatewayDeployer"
   },
   "repository": {
     "type": "git",
